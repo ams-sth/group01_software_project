@@ -29,3 +29,14 @@ body {
     color: var(--text);
     font-family: system-ui, "Segoe UI", Roboto, sans-serif;
 }
+
+/* Native number-input spinners render as a separate light widget that ignores
+   the app's theme (especially in dark mode) — hide them for a consistent look. */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
