@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SplitSync.Api.Data;
 using SplitSync.Api.Dtos;
 using SplitSync.Api.Models;
 using SplitSync.Api.Services;
@@ -12,7 +14,8 @@ namespace SplitSync.Api.Controllers;
 public class AuthController(
     UserManager<AppUser> userManager,
     UsernameGenerator usernameGenerator,
-    TokenService tokenService
+    TokenService tokenService,
+    AppDbContext db
 ) : ControllerBase
 {
     [HttpPost("register")]
@@ -62,5 +65,39 @@ public class AuthController(
             username = User.FindFirst("unique_name")?.Value,
             email = User.FindFirst("email")?.Value,
         });
+    }
+
+    [Authorize]
+    [HttpDelete("me")]
+    public async Task<IActionResult> DeleteMe()
+    {
+        var userId = User.FindFirst("sub")!.Value;
+
+        var ownedGroupNames = await db.Groups
+            .Where(g => g.CreatorId == userId)
+            .Select(g => g.Name)
+            .ToListAsync();
+
+        if (ownedGroupNames.Count > 0)
+        {
+            return Conflict(new
+            {
+                message = $"Delete the group(s) you own first: {string.Join(", ", ownedGroupNames)}.",
+            });
+        }
+
+        var user = await userManager.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return NotFound();
+        }
+
+        var result = await userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+        }
+
+        return NoContent();
     }
 }
