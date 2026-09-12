@@ -50,6 +50,117 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager)
         return Ok(groups);
     }
 
+    [HttpPatch("{id}")]
+    public async Task<ActionResult<GroupResponse>> Rename(Guid id, RenameGroupRequest request)
+    {
+        var userId = User.FindFirst("sub")!.Value;
+
+        var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == id);
+        if (group is null)
+        {
+            return NotFound(new { message = "Group not found." });
+        }
+
+        if (group.CreatorId != userId)
+        {
+            return Forbid();
+        }
+
+        group.Name = request.Name;
+        await db.SaveChangesAsync();
+
+        return Ok(await ToResponse(id));
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var userId = User.FindFirst("sub")!.Value;
+
+        var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == id);
+        if (group is null)
+        {
+            return NotFound(new { message = "Group not found." });
+        }
+
+        if (group.CreatorId != userId)
+        {
+            return Forbid();
+        }
+
+        db.Groups.Remove(group);
+        await db.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpDelete("{id}/members/{username}")]
+    public async Task<ActionResult<GroupResponse>> RemoveMember(Guid id, string username)
+    {
+        var userId = User.FindFirst("sub")!.Value;
+
+        var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == id);
+        if (group is null)
+        {
+            return NotFound(new { message = "Group not found." });
+        }
+
+        if (group.CreatorId != userId)
+        {
+            return Forbid();
+        }
+
+        var targetUser = await userManager.FindByNameAsync(username);
+        if (targetUser is null)
+        {
+            return NotFound(new { message = "No user with that username." });
+        }
+
+        if (targetUser.Id == group.CreatorId)
+        {
+            return BadRequest(new { message = "The group creator can't be removed. Delete the group instead." });
+        }
+
+        var membership = await db.GroupMembers.FirstOrDefaultAsync(gm => gm.GroupId == id && gm.UserId == targetUser.Id);
+        if (membership is null)
+        {
+            return NotFound(new { message = "That user isn't in this group." });
+        }
+
+        db.GroupMembers.Remove(membership);
+        await db.SaveChangesAsync();
+
+        return Ok(await ToResponse(id));
+    }
+
+    [HttpPost("{id}/leave")]
+    public async Task<IActionResult> Leave(Guid id)
+    {
+        var userId = User.FindFirst("sub")!.Value;
+
+        var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == id);
+        if (group is null)
+        {
+            return NotFound(new { message = "Group not found." });
+        }
+
+        if (group.CreatorId == userId)
+        {
+            return BadRequest(new { message = "The group creator can't leave. Delete the group instead." });
+        }
+
+        var membership = await db.GroupMembers.FirstOrDefaultAsync(gm => gm.GroupId == id && gm.UserId == userId);
+        if (membership is null)
+        {
+            return NotFound(new { message = "You're not in this group." });
+        }
+
+        db.GroupMembers.Remove(membership);
+        await db.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     [HttpPost("{id}/members")]
     public async Task<ActionResult<GroupResponse>> AddMember(Guid id, AddMemberRequest request)
     {
