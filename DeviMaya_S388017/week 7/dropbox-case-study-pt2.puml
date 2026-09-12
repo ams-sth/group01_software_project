@@ -1,0 +1,99 @@
+@startuml dropbox_erd
+
+hide circle
+skinparam linetype ortho
+
+entity "user" as user {
+  * id : uuid <<PK>>
+  --
+  name : string
+  --
+  created_at : timestamp
+  created_by : uuid
+  updated_at : timestamp
+  updated_by : uuid
+  deleted_at : timestamp
+  deleted_by : uuid
+}
+
+entity "file" as file {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK>>
+  name : string
+  mime_type : string
+  size : bigint
+  version : int
+  r2_path : string
+  --
+  created_at : timestamp
+  created_by : uuid
+  updated_at : timestamp
+  updated_by : uuid
+  deleted_at : timestamp
+  deleted_by : uuid
+}
+
+entity "file_version" as file_version {
+  * id : uuid <<PK>>
+  --
+  * file_id : uuid <<FK>>
+  version : int
+  r2_path : string
+  size : bigint
+  --
+  created_at : timestamp
+  created_by : uuid
+  updated_at : timestamp
+  updated_by : uuid
+  deleted_at : timestamp
+  deleted_by : uuid
+}
+
+entity "share_link" as share_link {
+  * id : uuid <<PK>>
+  --
+  * file_id : uuid <<FK, unique>>
+  url : string
+  --
+  created_at : timestamp
+  created_by : uuid
+  updated_at : timestamp
+  updated_by : uuid
+  deleted_at : timestamp
+  deleted_by : uuid
+}
+
+entity "device" as device {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK>>
+  last_synced_at : timestamp
+  --
+  created_at : timestamp
+  created_by : uuid
+  updated_at : timestamp
+  updated_by : uuid
+  deleted_at : timestamp
+  deleted_by : uuid
+}
+
+user ||--o{ file : owns
+user ||--o{ device : owns
+file ||--o{ file_version : has
+file ||--o| share_link : has
+
+note bottom of device
+  No FK to file.
+  Sync is query-time: compare
+  file.updated_at > device.last_synced_at
+end note
+
+note right of file
+  Conceptually "metadata" —
+  named "file" pragmatically.
+  Blob bytes live in R2/blob
+  storage, not in this row.
+end note
+
+@enduml
