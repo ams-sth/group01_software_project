@@ -22,13 +22,24 @@ app.UseAuthorization();
 app.MapControllers();
 
 // temporary code for task 2.5
-var draft = new JobApplication
-{
-    CompanyName = "Acme Corp",
-    Position = "Backend Engineer",
-    Location = "Remote",
-    CreatedAt = DateTimeOffset.UtcNow,
-    UpdatedAt = DateTimeOffset.UtcNow
-};
+// var draft = new JobApplication
+// {
+//     CompanyName = "Acme Corp",
+//     Position = "Backend Engineer",
+//     Location = "Remote",
+//     CreatedAt = DateTimeOffset.UtcNow,
+//     UpdatedAt = DateTimeOffset.UtcNow
+// };
 
-app.Run();
+// app.Run();
+
+
+var store = new InMemoryJobApplicationStore();
+store.Add(new JobApplication { CompanyName = "Acme", Position = "Engineer", CreatedAt = DateTimeOffset.UtcNow, UpdatedAt = DateTimeOffset.UtcNow });
+
+var all = store.GetAll();
+if (all is List<JobApplication> mutableList)
+{
+    mutableList.Clear(); // if this compiles and works, the store is exposed
+}
+Console.WriteLine(store.GetAll().Count()); // should print 1, but will print 0 if vulnerable
