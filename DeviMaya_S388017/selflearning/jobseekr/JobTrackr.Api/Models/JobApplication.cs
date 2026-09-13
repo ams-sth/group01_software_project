@@ -2,8 +2,8 @@ namespace JobTrackr.Api.Models;
 
 public class JobApplication
 {
-    public int Id { get; init; }
-    public DateTimeOffset CreatedAt { get; init; }
+    public int Id { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 
     public string CompanyName { get; set; } = default!;
     public string Position { get; set; } = default!;
