@@ -13,7 +13,11 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SecureVault.Console")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
+<<<<<<< HEAD
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+17724da653304b3702bdd1bb399910169e9822eb")]
+=======
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c47a2ff1c87e6b1b22540ca2a44b2eaf8945d070")]
+>>>>>>> d12a741 (Updated timesheet, added project report)
 [assembly: System.Reflection.AssemblyProductAttribute("SecureVault.Console")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SecureVault.Console")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
