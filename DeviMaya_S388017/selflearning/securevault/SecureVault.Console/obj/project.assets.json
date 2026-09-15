@@ -8,19 +8,19 @@
     "net10.0": []
   },
   "packageFolders": {
-    "/Users/devi/.nuget/packages/": {}
+    "/Users/amsh/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/devi/Documents/GitHub/PRT585-SOFTWARE-ENGINEERING-PRACTICE/DeviMaya_S388017/selflearning/securevault/SecureVault.Console/SecureVault.Console.csproj",
+      "projectUniqueName": "/Users/amsh/Education/CDU - PRT585 SOFTWARE ENGINEERING PRACTICE/group_1_software_project/DeviMaya_S388017/selflearning/securevault/SecureVault.Console/SecureVault.Console.csproj",
       "projectName": "SecureVault.Console",
-      "projectPath": "/Users/devi/Documents/GitHub/PRT585-SOFTWARE-ENGINEERING-PRACTICE/DeviMaya_S388017/selflearning/securevault/SecureVault.Console/SecureVault.Console.csproj",
-      "packagesPath": "/Users/devi/.nuget/packages/",
-      "outputPath": "/Users/devi/Documents/GitHub/PRT585-SOFTWARE-ENGINEERING-PRACTICE/DeviMaya_S388017/selflearning/securevault/SecureVault.Console/obj/",
+      "projectPath": "/Users/amsh/Education/CDU - PRT585 SOFTWARE ENGINEERING PRACTICE/group_1_software_project/DeviMaya_S388017/selflearning/securevault/SecureVault.Console/SecureVault.Console.csproj",
+      "packagesPath": "/Users/amsh/.nuget/packages/",
+      "outputPath": "/Users/amsh/Education/CDU - PRT585 SOFTWARE ENGINEERING PRACTICE/group_1_software_project/DeviMaya_S388017/selflearning/securevault/SecureVault.Console/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/Users/devi/.nuget/NuGet/NuGet.Config"
+        "/Users/amsh/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
@@ -45,7 +45,7 @@
         "auditLevel": "low",
         "auditMode": "all"
       },
-      "SdkAnalysisLevel": "10.0.300"
+      "SdkAnalysisLevel": "10.0.400"
     },
     "frameworks": {
       "net10.0": {
@@ -67,7 +67,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.302/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "/Users/amsh/.local/share/mise/dotnet-root/sdk/10.0.400/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",
