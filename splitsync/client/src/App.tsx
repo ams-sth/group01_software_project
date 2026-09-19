@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import AuthenticationPage from "./pages/AuthenticationPage";
+import GroupDashboardPage from "./pages/GroupDashboardPage";
 import GroupsPage from "./pages/GroupsPage";
 import HomePage from "./pages/HomePage";
 import LandingPage from "./pages/LandingPage";
@@ -12,6 +13,7 @@ function App() {
 			<Route path="/login" element={<AuthenticationPage />} />
 			<Route path="/home" element={<HomePage />} />
 			<Route path="/groups" element={<GroupsPage />} />
+			<Route path="/groups/:id" element={<GroupDashboardPage />} />
 			<Route path="/profile" element={<ProfilePage />} />
 		</Routes>
 	);
