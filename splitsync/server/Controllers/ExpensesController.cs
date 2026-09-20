@@ -4,13 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using SplitSync.Api.Data;
 using SplitSync.Api.Dtos;
 using SplitSync.Api.Models;
+using SplitSync.Api.Services;
 
 namespace SplitSync.Api.Controllers;
 
 [ApiController]
 [Route("api/groups/{groupId}/expenses")]
 [Authorize]
-public class ExpensesController(AppDbContext db) : ControllerBase
+public class ExpensesController(AppDbContext db, NotificationService notifications) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<List<ExpenseResponse>>> List(Guid groupId)
@@ -151,6 +152,14 @@ public class ExpensesController(AppDbContext db) : ControllerBase
 
         db.Expenses.Add(expense);
         await db.SaveChangesAsync();
+
+        var actorUsername = User.FindFirst("unique_name")!.Value;
+        var otherMemberIds = group.Members.Select(m => m.UserId).Where(id => id != userId);
+        await notifications.NotifyManyAsync(
+            otherMemberIds,
+            $"{actorUsername} added \"{expense.Description}\" (${expense.Amount:0.00}) in \"{group.Name}\"",
+            group.Id
+        );
 
         return Ok(await ToResponseAsync(expense.Id));
     }

@@ -31,6 +31,7 @@ builder.Services
 
 builder.Services.AddScoped<UsernameGenerator>();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<NotificationService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

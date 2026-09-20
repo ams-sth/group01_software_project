@@ -61,17 +61,7 @@ function GroupsPage() {
 
   return (
     <main className="mx-auto max-w-2xl p-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-(--text-h)">Your spending groups</h1>
-        <div className="flex gap-4 text-sm">
-          <Link to="/home" className="text-(--accent) hover:underline">
-            Home
-          </Link>
-          <Link to="/profile" className="text-(--accent) hover:underline">
-            Profile
-          </Link>
-        </div>
-      </div>
+      <h1 className="text-2xl font-semibold text-(--text-h)">Your spending groups</h1>
 
       <form onSubmit={handleCreate} className="mt-6 flex gap-2">
         <input

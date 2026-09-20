@@ -5,13 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using SplitSync.Api.Data;
 using SplitSync.Api.Dtos;
 using SplitSync.Api.Models;
+using SplitSync.Api.Services;
 
 namespace SplitSync.Api.Controllers;
 
 [ApiController]
 [Route("api/groups/{groupId}")]
 [Authorize]
-public class SettlementsController(AppDbContext db, UserManager<AppUser> userManager) : ControllerBase
+public class SettlementsController(AppDbContext db, UserManager<AppUser> userManager, NotificationService notifications) : ControllerBase
 {
     // Balances shown are pairwise and only versus members who share a debt
     // with the signed-in user — balances between two OTHER members are
@@ -160,6 +161,13 @@ public class SettlementsController(AppDbContext db, UserManager<AppUser> userMan
         await db.SaveChangesAsync();
 
         var currentUsername = User.FindFirst("unique_name")!.Value;
+
+        var groupName = await db.Groups.Where(g => g.Id == groupId).Select(g => g.Name).FirstAsync();
+        var notifyMessage = request.IPaid
+            ? $"{currentUsername} paid you ${request.Amount:0.00} in \"{groupName}\""
+            : $"{currentUsername} recorded that you paid them ${request.Amount:0.00} in \"{groupName}\"";
+        await notifications.NotifyAsync(otherUser.Id, notifyMessage, groupId);
+
         return Ok(new SettlementResponse(
             settlement.Id,
             request.IPaid ? currentUsername : otherUser.UserName!,

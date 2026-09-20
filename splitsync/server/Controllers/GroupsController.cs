@@ -5,13 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using SplitSync.Api.Data;
 using SplitSync.Api.Dtos;
 using SplitSync.Api.Models;
+using SplitSync.Api.Services;
 
 namespace SplitSync.Api.Controllers;
 
 [ApiController]
 [Route("api/groups")]
 [Authorize]
-public class GroupsController(AppDbContext db, UserManager<AppUser> userManager) : ControllerBase
+public class GroupsController(AppDbContext db, UserManager<AppUser> userManager, NotificationService notifications) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<GroupResponse>> Create(CreateGroupRequest request)
@@ -88,8 +89,17 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager)
             return Forbid();
         }
 
+        var otherMemberIds = await db.GroupMembers
+            .Where(gm => gm.GroupId == id && gm.UserId != userId)
+            .Select(gm => gm.UserId)
+            .ToListAsync();
+        var groupName = group.Name;
+
         db.Groups.Remove(group);
         await db.SaveChangesAsync();
+
+        var actorUsername = User.FindFirst("unique_name")!.Value;
+        await notifications.NotifyManyAsync(otherMemberIds, $"{actorUsername} deleted \"{groupName}\"");
 
         return NoContent();
     }
@@ -129,6 +139,9 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager)
 
         db.GroupMembers.Remove(membership);
         await db.SaveChangesAsync();
+
+        var actorUsername = User.FindFirst("unique_name")!.Value;
+        await notifications.NotifyAsync(targetUser.Id, $"{actorUsername} removed you from \"{group.Name}\"", group.Id);
 
         return Ok(await ToResponse(id));
     }
@@ -191,6 +204,9 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager)
 
         db.GroupMembers.Add(new GroupMember { GroupId = id, UserId = targetUser.Id });
         await db.SaveChangesAsync();
+
+        var actorUsername = User.FindFirst("unique_name")!.Value;
+        await notifications.NotifyAsync(targetUser.Id, $"{actorUsername} added you to \"{group.Name}\"", group.Id);
 
         return Ok(await ToResponse(id));
     }

@@ -11,6 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<ExpenseShare> ExpenseShares => Set<ExpenseShare>();
     public DbSet<Settlement> Settlements => Set<Settlement>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -89,6 +90,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             entity.HasOne(s => s.ToUser)
                 .WithMany()
                 .HasForeignKey(s => s.ToUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Notification>(entity =>
+        {
+            entity.HasOne(n => n.RecipientUser)
+                .WithMany()
+                .HasForeignKey(n => n.RecipientUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(n => n.Group)
+                .WithMany()
+                .HasForeignKey(n => n.GroupId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

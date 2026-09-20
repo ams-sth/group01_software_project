@@ -191,3 +191,27 @@ export function recordSettlement(groupId: string, username: string, amount: numb
     body: JSON.stringify({ username, amount, iPaid }),
   })
 }
+
+export interface NotificationResponse {
+  id: string
+  message: string
+  groupId: string | null
+  isRead: boolean
+  createdAt: string
+}
+
+export function listNotifications() {
+  return request<NotificationResponse[]>('/notifications')
+}
+
+export function getUnreadNotificationCount() {
+  return request<{ count: number }>('/notifications/unread-count')
+}
+
+export function markNotificationRead(id: string) {
+  return request<void>(`/notifications/${id}/read`, { method: 'POST' })
+}
+
+export function markAllNotificationsRead() {
+  return request<void>('/notifications/read-all', { method: 'POST' })
+}

@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router-dom";
+import AuthenticatedLayout from "./components/AuthenticatedLayout";
 import AuthenticationPage from "./pages/AuthenticationPage";
 import GroupDashboardPage from "./pages/GroupDashboardPage";
 import GroupsPage from "./pages/GroupsPage";
@@ -11,10 +12,12 @@ function App() {
 		<Routes>
 			<Route path="/" element={<LandingPage />} />
 			<Route path="/login" element={<AuthenticationPage />} />
-			<Route path="/home" element={<HomePage />} />
-			<Route path="/groups" element={<GroupsPage />} />
-			<Route path="/groups/:id" element={<GroupDashboardPage />} />
-			<Route path="/profile" element={<ProfilePage />} />
+			<Route element={<AuthenticatedLayout />}>
+				<Route path="/home" element={<HomePage />} />
+				<Route path="/groups" element={<GroupsPage />} />
+				<Route path="/groups/:id" element={<GroupDashboardPage />} />
+				<Route path="/profile" element={<ProfilePage />} />
+			</Route>
 		</Routes>
 	);
 }
