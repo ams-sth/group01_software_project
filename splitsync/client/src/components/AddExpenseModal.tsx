@@ -1,24 +1,53 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { addExpense, ApiError, type ExpenseResponse, type ExpenseSplitInput, type SplitMethod } from '../lib/api'
+import {
+  addExpense,
+  ApiError,
+  updateExpense,
+  type ExpenseResponse,
+  type ExpenseSplitInput,
+  type SplitMethod,
+} from '../lib/api'
+
+function initialSplitValues(expense: ExpenseResponse | undefined): Record<string, string> {
+  if (!expense) return {}
+  if (expense.splitMethod === 'unequal') {
+    return Object.fromEntries(expense.shares.map((share) => [share.username, String(share.amount)]))
+  }
+  if (expense.splitMethod === 'percentage') {
+    // The server only persists/returns the resolved dollar amount per share, not
+    // the original percentage — re-derive an approximate percentage from it so
+    // there's something sensible to edit from, rather than claiming false precision.
+    return Object.fromEntries(
+      expense.shares.map((share) => [share.username, String(Math.round((share.amount / expense.amount) * 100))]),
+    )
+  }
+  return {}
+}
 
 function AddExpenseModal({
   groupId,
   memberUsernames,
+  expense,
   onClose,
-  onAdded,
+  onSaved,
 }: {
   groupId: string
   memberUsernames: string[]
+  expense?: ExpenseResponse
   onClose: () => void
-  onAdded: (expense: ExpenseResponse) => void
+  onSaved: (expense: ExpenseResponse) => void
 }) {
-  const [description, setDescription] = useState('')
-  const [amount, setAmount] = useState('')
-  const [splitMethod, setSplitMethod] = useState<SplitMethod>('equal')
-  const [selectedUsernames, setSelectedUsernames] = useState<Set<string>>(new Set(memberUsernames))
-  const [splitValues, setSplitValues] = useState<Record<string, string>>({})
-  const [isAdding, setIsAdding] = useState(false)
-  const [addError, setAddError] = useState<string | null>(null)
+  const isEditing = expense !== undefined
+
+  const [description, setDescription] = useState(expense?.description ?? '')
+  const [amount, setAmount] = useState(expense ? String(expense.amount) : '')
+  const [splitMethod, setSplitMethod] = useState<SplitMethod>(expense?.splitMethod ?? 'equal')
+  const [selectedUsernames, setSelectedUsernames] = useState<Set<string>>(
+    new Set(expense ? expense.shares.map((share) => share.username) : memberUsernames),
+  )
+  const [splitValues, setSplitValues] = useState<Record<string, string>>(initialSplitValues(expense))
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -53,7 +82,7 @@ function AddExpenseModal({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setAddError(null)
+    setSaveError(null)
 
     const splits: ExpenseSplitInput[] = selectedList.map((memberUsername) => ({
       username: memberUsername,
@@ -61,15 +90,17 @@ function AddExpenseModal({
       percentage: splitMethod === 'percentage' ? Number(splitValues[memberUsername]) : undefined,
     }))
 
-    setIsAdding(true)
+    setIsSaving(true)
     try {
-      const expense = await addExpense(groupId, description, parsedAmount, splitMethod, splits)
-      onAdded(expense)
+      const saved = isEditing
+        ? await updateExpense(groupId, expense.id, description, parsedAmount, splitMethod, splits)
+        : await addExpense(groupId, description, parsedAmount, splitMethod, splits)
+      onSaved(saved)
       onClose()
     } catch (err) {
-      setAddError(err instanceof ApiError ? err.message : 'Could not add that expense.')
+      setSaveError(err instanceof ApiError ? err.message : `Could not ${isEditing ? 'save' : 'add'} that expense.`)
     } finally {
-      setIsAdding(false)
+      setIsSaving(false)
     }
   }
 
@@ -81,12 +112,12 @@ function AddExpenseModal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Add expense"
+        aria-label={isEditing ? 'Edit expense' : 'Add expense'}
         onClick={(event) => event.stopPropagation()}
         className="w-full max-w-sm rounded-lg border p-4 border-(--border) bg-(--surface)"
       >
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-(--text-h)">Add expense</p>
+          <p className="text-sm font-semibold text-(--text-h)">{isEditing ? 'Edit expense' : 'Add expense'}</p>
           <button
             type="button"
             onClick={onClose}
@@ -178,9 +209,9 @@ function AddExpenseModal({
             </p>
           )}
 
-          {addError && (
+          {saveError && (
             <p role="alert" className="text-xs text-red-500">
-              {addError}
+              {saveError}
             </p>
           )}
 
@@ -194,10 +225,10 @@ function AddExpenseModal({
             </button>
             <button
               type="submit"
-              disabled={isAdding || !isSplitValid}
+              disabled={isSaving || !isSplitValid}
               className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-white bg-(--accent) hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isAdding ? 'Adding…' : 'Add expense'}
+              {isSaving ? 'Saving…' : isEditing ? 'Save changes' : 'Add expense'}
             </button>
           </div>
         </form>

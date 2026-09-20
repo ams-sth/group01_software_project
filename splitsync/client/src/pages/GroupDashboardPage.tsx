@@ -4,6 +4,7 @@ import AddExpenseModal from '../components/AddExpenseModal'
 import {
   addMember,
   ApiError,
+  deleteExpense,
   deleteGroup,
   getBalances,
   leaveGroup,
@@ -37,6 +38,9 @@ function GroupDashboardPage() {
 
   const [tab, setTab] = useState<Tab>('overview')
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false)
+  const [editingExpense, setEditingExpense] = useState<ExpenseResponse | null>(null)
+  const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null)
+  const [deleteExpenseError, setDeleteExpenseError] = useState<string | null>(null)
 
   const [expenses, setExpenses] = useState<ExpenseResponse[]>([])
   const [settlements, setSettlements] = useState<SettlementResponse[]>([])
@@ -251,6 +255,24 @@ function GroupDashboardPage() {
     }
   }
 
+  async function handleDeleteExpense(expenseId: string, description: string) {
+    if (!group) return
+    if (!window.confirm(`Delete "${description}"? This can't be undone.`)) {
+      return
+    }
+    setDeleteExpenseError(null)
+    setDeletingExpenseId(expenseId)
+    try {
+      await deleteExpense(group.id, expenseId)
+      refreshTransactions()
+      refreshBalances()
+    } catch (err) {
+      setDeleteExpenseError(err instanceof ApiError ? err.message : 'Could not delete that expense.')
+    } finally {
+      setDeletingExpenseId(null)
+    }
+  }
+
   return (
     <main className="mx-auto max-w-2xl p-8">
       <Link to="/groups" className="text-sm text-(--accent) hover:underline">
@@ -417,15 +439,41 @@ function GroupDashboardPage() {
         <div className="mt-4 flex flex-col gap-2">
           {isLoadingTransactions && <p className="text-xs text-(--text)">Loading transactions…</p>}
           {transactionsError && <p className="text-xs text-red-500">{transactionsError}</p>}
+          {deleteExpenseError && (
+            <p role="alert" className="text-xs text-red-500">
+              {deleteExpenseError}
+            </p>
+          )}
           {!isLoadingTransactions && !transactionsError && transactions.length === 0 && (
             <p className="text-xs text-(--text)">No transactions yet.</p>
           )}
           {transactions.map((item) =>
             item.kind === 'expense' ? (
               <div key={`expense-${item.id}`} className="rounded-md border p-2 border-(--border) bg-(--surface)">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-semibold text-(--text-h)">{item.data.description}</p>
-                  <p className="text-xs text-(--text-h)">${item.data.amount.toFixed(2)}</p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <p className="text-xs text-(--text-h)">${item.data.amount.toFixed(2)}</p>
+                    {item.data.paidByUsername === currentUsername && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setEditingExpense(item.data)}
+                          className="cursor-pointer text-[11px] text-(--accent) hover:underline"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExpense(item.data.id, item.data.description)}
+                          disabled={deletingExpenseId === item.data.id}
+                          className="cursor-pointer text-[11px] text-red-500 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {deletingExpenseId === item.data.id ? 'Deleting…' : 'Delete'}
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <p className="mt-0.5 text-[11px] text-(--text)">Paid by {item.data.paidByUsername}</p>
                 <p className="text-[11px] text-(--text)">
@@ -557,12 +605,16 @@ function GroupDashboardPage() {
         </div>
       )}
 
-      {isAddExpenseOpen && (
+      {(isAddExpenseOpen || editingExpense) && (
         <AddExpenseModal
           groupId={group.id}
           memberUsernames={group.memberUsernames}
-          onClose={() => setIsAddExpenseOpen(false)}
-          onAdded={() => {
+          expense={editingExpense ?? undefined}
+          onClose={() => {
+            setIsAddExpenseOpen(false)
+            setEditingExpense(null)
+          }}
+          onSaved={() => {
             refreshTransactions()
             refreshBalances()
           }}

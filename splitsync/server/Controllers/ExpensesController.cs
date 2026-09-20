@@ -44,23 +44,6 @@ public class ExpensesController(AppDbContext db, NotificationService notificatio
             return BadRequest(new { message = "Amount must be greater than zero." });
         }
 
-        var splitMethod = request.SplitMethod?.Trim().ToLowerInvariant();
-        if (splitMethod is not ("equal" or "unequal" or "percentage"))
-        {
-            return BadRequest(new { message = "Split method must be 'equal', 'unequal', or 'percentage'." });
-        }
-
-        if (request.Splits is null || request.Splits.Count == 0)
-        {
-            return BadRequest(new { message = "Select at least one member to split with." });
-        }
-
-        var usernames = request.Splits.Select(s => s.Username).ToList();
-        if (usernames.Distinct(StringComparer.OrdinalIgnoreCase).Count() != usernames.Count)
-        {
-            return BadRequest(new { message = "Each member can only appear once in the split." });
-        }
-
         var group = await db.Groups
             .Include(g => g.Members).ThenInclude(m => m.User)
             .FirstOrDefaultAsync(g => g.Id == groupId);
@@ -76,62 +59,10 @@ public class ExpensesController(AppDbContext db, NotificationService notificatio
 
         var memberIdsByUsername = group.Members.ToDictionary(m => m.User.UserName!, m => m.UserId, StringComparer.OrdinalIgnoreCase);
 
-        var resolvedUserIds = new List<string>();
-        foreach (var username in usernames)
+        var (error, splitMethod, shares) = ValidateAndComputeShares(request.Amount, request.SplitMethod, request.Splits, memberIdsByUsername);
+        if (error is not null)
         {
-            if (!memberIdsByUsername.TryGetValue(username, out var memberUserId))
-            {
-                return BadRequest(new { message = $"{username} isn't a member of this group." });
-            }
-            resolvedUserIds.Add(memberUserId);
-        }
-
-        List<(string UserId, decimal Amount)> shares;
-        switch (splitMethod)
-        {
-            case "equal":
-                shares = SplitEqually(request.Amount, resolvedUserIds);
-                break;
-
-            case "unequal":
-                if (request.Splits.Any(s => s.Amount is null or <= 0))
-                {
-                    return BadRequest(new { message = "Enter an amount greater than zero for each selected member." });
-                }
-                var amountSum = request.Splits.Sum(s => s.Amount!.Value);
-                if (Math.Round(amountSum, 2) != Math.Round(request.Amount, 2))
-                {
-                    return BadRequest(new
-                    {
-                        message = $"Split amounts must add up to the total (${request.Amount:0.00}), but they add up to ${amountSum:0.00}.",
-                    });
-                }
-                shares = request.Splits
-                    .Select((s, i) => (resolvedUserIds[i], Math.Round(s.Amount!.Value, 2)))
-                    .ToList();
-                break;
-
-            case "percentage":
-                if (request.Splits.Any(s => s.Percentage is null or <= 0))
-                {
-                    return BadRequest(new { message = "Enter a percentage greater than zero for each selected member." });
-                }
-                var percentageSum = request.Splits.Sum(s => s.Percentage!.Value);
-                if (Math.Round(percentageSum, 2) != 100m)
-                {
-                    return BadRequest(new
-                    {
-                        message = $"Percentages must add up to 100%, but they add up to {percentageSum:0.##}%.",
-                    });
-                }
-                shares = SplitByPercentage(
-                    request.Amount,
-                    request.Splits.Select((s, i) => (resolvedUserIds[i], s.Percentage!.Value)).ToList()
-                );
-                break;
-
-            default:
-                return BadRequest(new { message = "Unknown split method." });
+            return BadRequest(new { message = error });
         }
 
         var expense = new Expense
@@ -162,6 +93,156 @@ public class ExpensesController(AppDbContext db, NotificationService notificatio
         );
 
         return Ok(await ToResponseAsync(expense.Id));
+    }
+
+    [HttpPatch("{expenseId}")]
+    public async Task<ActionResult<ExpenseResponse>> Update(Guid groupId, Guid expenseId, CreateExpenseRequest request)
+    {
+        var userId = User.FindFirst("sub")!.Value;
+
+        if (request.Amount <= 0)
+        {
+            return BadRequest(new { message = "Amount must be greater than zero." });
+        }
+
+        var expense = await db.Expenses
+            .Include(e => e.Shares)
+            .FirstOrDefaultAsync(e => e.Id == expenseId && e.GroupId == groupId);
+        if (expense is null)
+        {
+            return NotFound(new { message = "Expense not found." });
+        }
+
+        if (expense.PaidByUserId != userId)
+        {
+            return Forbid();
+        }
+
+        var group = await db.Groups
+            .Include(g => g.Members).ThenInclude(m => m.User)
+            .FirstAsync(g => g.Id == groupId);
+        var memberIdsByUsername = group.Members.ToDictionary(m => m.User.UserName!, m => m.UserId, StringComparer.OrdinalIgnoreCase);
+
+        var (error, splitMethod, shares) = ValidateAndComputeShares(request.Amount, request.SplitMethod, request.Splits, memberIdsByUsername);
+        if (error is not null)
+        {
+            return BadRequest(new { message = error });
+        }
+
+        expense.Description = request.Description;
+        expense.Amount = request.Amount;
+        expense.SplitMethod = splitMethod;
+
+        db.ExpenseShares.RemoveRange(expense.Shares);
+        expense.Shares.Clear();
+        foreach (var (memberId, shareAmount) in shares)
+        {
+            expense.Shares.Add(new ExpenseShare { ExpenseId = expense.Id, UserId = memberId, Amount = shareAmount });
+        }
+
+        await db.SaveChangesAsync();
+
+        return Ok(await ToResponseAsync(expense.Id));
+    }
+
+    [HttpDelete("{expenseId}")]
+    public async Task<IActionResult> Delete(Guid groupId, Guid expenseId)
+    {
+        var userId = User.FindFirst("sub")!.Value;
+
+        var expense = await db.Expenses.FirstOrDefaultAsync(e => e.Id == expenseId && e.GroupId == groupId);
+        if (expense is null)
+        {
+            return NotFound(new { message = "Expense not found." });
+        }
+
+        if (expense.PaidByUserId != userId)
+        {
+            return Forbid();
+        }
+
+        db.Expenses.Remove(expense);
+        await db.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    // Validates the split request and computes the resulting per-member shares.
+    // Shared by Create and Update so the equal/unequal/percentage rules (and the
+    // cent-accurate splitting) can't drift between the two.
+    private static (string? Error, string SplitMethod, List<(string UserId, decimal Amount)> Shares) ValidateAndComputeShares(
+        decimal amount, string? splitMethodRaw, List<ExpenseSplitInput> splits, Dictionary<string, string> memberIdsByUsername)
+    {
+        var splitMethod = splitMethodRaw?.Trim().ToLowerInvariant() ?? "";
+        if (splitMethod is not ("equal" or "unequal" or "percentage"))
+        {
+            return ("Split method must be 'equal', 'unequal', or 'percentage'.", splitMethod, []);
+        }
+
+        if (splits is null || splits.Count == 0)
+        {
+            return ("Select at least one member to split with.", splitMethod, []);
+        }
+
+        var usernames = splits.Select(s => s.Username).ToList();
+        if (usernames.Distinct(StringComparer.OrdinalIgnoreCase).Count() != usernames.Count)
+        {
+            return ("Each member can only appear once in the split.", splitMethod, []);
+        }
+
+        var resolvedUserIds = new List<string>();
+        foreach (var username in usernames)
+        {
+            if (!memberIdsByUsername.TryGetValue(username, out var memberUserId))
+            {
+                return ($"{username} isn't a member of this group.", splitMethod, []);
+            }
+            resolvedUserIds.Add(memberUserId);
+        }
+
+        List<(string UserId, decimal Amount)> shares;
+        switch (splitMethod)
+        {
+            case "equal":
+                shares = SplitEqually(amount, resolvedUserIds);
+                break;
+
+            case "unequal":
+                if (splits.Any(s => s.Amount is null or <= 0))
+                {
+                    return ("Enter an amount greater than zero for each selected member.", splitMethod, []);
+                }
+                var amountSum = splits.Sum(s => s.Amount!.Value);
+                if (Math.Round(amountSum, 2) != Math.Round(amount, 2))
+                {
+                    return ($"Split amounts must add up to the total (${amount:0.00}), but they add up to ${amountSum:0.00}.", splitMethod, []);
+                }
+                shares = splits
+                    .Select((s, i) => (resolvedUserIds[i], Math.Round(s.Amount!.Value, 2)))
+                    .ToList();
+                break;
+
+            case "percentage":
+                if (splits.Any(s => s.Percentage is null or <= 0))
+                {
+                    return ("Enter a percentage greater than zero for each selected member.", splitMethod, []);
+                }
+                var percentageSum = splits.Sum(s => s.Percentage!.Value);
+                if (Math.Round(percentageSum, 2) != 100m)
+                {
+                    return ($"Percentages must add up to 100%, but they add up to {percentageSum:0.##}%.", splitMethod, []);
+                }
+                shares = SplitByPercentage(
+                    amount,
+                    splits.Select((s, i) => (resolvedUserIds[i], s.Percentage!.Value)).ToList()
+                );
+                break;
+
+            default:
+                return ("Unknown split method.", splitMethod, []);
+        }
+
+        return (null, splitMethod, shares);
     }
 
     // Splits in integer cents so the shares always add back up to the original

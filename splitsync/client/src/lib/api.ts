@@ -158,6 +158,24 @@ export function addExpense(
   })
 }
 
+export function updateExpense(
+  groupId: string,
+  expenseId: string,
+  description: string,
+  amount: number,
+  splitMethod: SplitMethod,
+  splits: ExpenseSplitInput[]
+) {
+  return request<ExpenseResponse>(`/groups/${groupId}/expenses/${expenseId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ description, amount, splitMethod, splits }),
+  })
+}
+
+export function deleteExpense(groupId: string, expenseId: string) {
+  return request<void>(`/groups/${groupId}/expenses/${expenseId}`, { method: 'DELETE' })
+}
+
 export interface MemberBalance {
   username: string
   netAmount: number
