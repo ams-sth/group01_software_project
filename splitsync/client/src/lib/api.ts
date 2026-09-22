@@ -1,6 +1,6 @@
 import { getToken } from './session'
 
-// VITE_API_URL is a bare host (see render.yaml's `fromService` link), not a full URL.
+// VITE_API_URL is a bare host (e.g. "splitsync-api-9v5f.onrender.com", see render.yaml), not a full URL.
 const API_BASE = import.meta.env.VITE_API_URL ? `https://${import.meta.env.VITE_API_URL}/api` : '/api'
 
 export class ApiError extends Error {
