@@ -30,11 +30,11 @@ services:
   - type: web
     name: splitsync-client
     runtime: static
-    buildCommand: corepack enable && cd splitsync/client && pnpm install --frozen-lockfile && pnpm build
+    buildCommand: cd splitsync/client && npx --yes pnpm@11 install --frozen-lockfile && npx --yes pnpm@11 build
     staticPublishPath: ./splitsync/client/dist
     envVars:
       - key: VITE_API_URL
-        value: https://splitsync-api.onrender.com/api
+        value: https://splitsync-api-4qx2.onrender.com/api
     routes:
       - type: rewrite
         source: /*
