@@ -56,9 +56,7 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
-// Render assigns each service's onrender.com hostname at provision time (see render.yaml's
-// `fromService` links), so this is a bare host like "splitsync-client-abcd.onrender.com",
-// not a full origin URL.
+// A bare host (e.g. "splitsync-client.onrender.com", see render.yaml), not a full origin URL.
 var allowedOriginHost = builder.Configuration["Cors:AllowedOrigin"];
 builder.Services.AddCors(options =>
 {
