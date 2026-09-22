@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ApiError, login, register } from '../lib/api'
 import { saveSession } from '../lib/session'
+import ThemeToggle from '../components/ThemeToggle'
 
 type Mode = 'signin' | 'create'
 
@@ -31,9 +32,34 @@ function AuthenticationPage() {
   }
 
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
-      <div className="flex w-full max-w-90 flex-col gap-5">
-        <h1 className="text-center text-[28px] font-semibold text-(--text-h)">
+    <main className="grid min-h-svh grid-cols-1 lg:grid-cols-2">
+      <div className="brand-gradient relative hidden flex-col justify-between overflow-hidden p-12 text-white lg:flex">
+        <div
+          className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-white/10 blur-3xl"
+          aria-hidden="true"
+        />
+        <Link to="/" className="flex items-center gap-2 text-lg font-bold">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20">S</span>
+          SplitSync
+        </Link>
+        <div className="relative flex max-w-md flex-col gap-4">
+          <h2 className="text-4xl font-extrabold leading-tight">
+            Split expenses. Stay friends.
+          </h2>
+          <p className="text-white/85">
+            Track shared expenses with your housemates — who paid, who owes, and who's
+            settled up, all in one place.
+          </p>
+        </div>
+        <p className="relative text-sm text-white/70">© {new Date().getFullYear()} SplitSync</p>
+      </div>
+
+      <div className="relative flex flex-col items-center justify-center p-6 sm:p-10">
+        <div className="absolute right-6 top-6 lg:right-10 lg:top-10">
+          <ThemeToggle />
+        </div>
+        <div className="flex w-full max-w-sm flex-col gap-5">
+        <h1 className="text-center text-[28px] font-semibold text-(--text-h) lg:hidden">
           SplitSync
         </h1>
 
@@ -107,7 +133,7 @@ function AuthenticationPage() {
           />
 
           {error && (
-            <p role="alert" className="mt-1 text-xs text-red-500">
+            <p role="alert" className="mt-1 text-xs text-(--danger)">
               {error}
             </p>
           )}
@@ -124,6 +150,7 @@ function AuthenticationPage() {
         <p className="text-center text-xs text-(--text)">
           Your password is hashed and never stored in plain text.
         </p>
+        </div>
       </div>
     </main>
   )
