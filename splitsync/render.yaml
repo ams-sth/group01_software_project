@@ -25,7 +25,10 @@ services:
       - key: Jwt__Key
         generateValue: true
       - key: Cors__AllowedOrigin
-        value: https://splitsync-client.onrender.com
+        fromService:
+          type: web
+          name: splitsync-client
+          property: host
 
   - type: web
     name: splitsync-client
@@ -34,7 +37,10 @@ services:
     staticPublishPath: ./splitsync/client/dist
     envVars:
       - key: VITE_API_URL
-        value: https://splitsync-api-4qx2.onrender.com/api
+        fromService:
+          type: web
+          name: splitsync-api
+          property: host
     routes:
       - type: rewrite
         source: /*

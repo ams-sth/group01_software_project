@@ -1,6 +1,7 @@
 import { getToken } from './session'
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+// VITE_API_URL is a bare host (see render.yaml's `fromService` link), not a full URL.
+const API_BASE = import.meta.env.VITE_API_URL ? `https://${import.meta.env.VITE_API_URL}/api` : '/api'
 
 export class ApiError extends Error {
   status: number
