@@ -11,7 +11,6 @@ services:
     plan: free
     dockerfilePath: ./server/Dockerfile
     dockerContext: ./server
-    preDeployCommand: dotnet SplitSync.Api.dll --migrate
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
