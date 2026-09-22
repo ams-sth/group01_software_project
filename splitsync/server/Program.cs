@@ -56,14 +56,17 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
-var allowedOrigin = builder.Configuration["Cors:AllowedOrigin"];
+// Render assigns each service's onrender.com hostname at provision time (see render.yaml's
+// `fromService` links), so this is a bare host like "splitsync-client-abcd.onrender.com",
+// not a full origin URL.
+var allowedOriginHost = builder.Configuration["Cors:AllowedOrigin"];
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Client", policy =>
     {
-        if (!string.IsNullOrEmpty(allowedOrigin))
+        if (!string.IsNullOrEmpty(allowedOriginHost))
         {
-            policy.WithOrigins(allowedOrigin).AllowAnyHeader().AllowAnyMethod();
+            policy.WithOrigins($"https://{allowedOriginHost}").AllowAnyHeader().AllowAnyMethod();
         }
     });
 });
