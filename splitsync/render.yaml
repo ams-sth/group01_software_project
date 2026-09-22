@@ -9,8 +9,8 @@ services:
     name: splitsync-api
     runtime: docker
     plan: free
-    dockerfilePath: ./server/Dockerfile
-    dockerContext: ./server
+    dockerfilePath: ./splitsync/server/Dockerfile
+    dockerContext: ./splitsync/server
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -30,8 +30,8 @@ services:
   - type: web
     name: splitsync-client
     runtime: static
-    buildCommand: corepack enable && cd client && pnpm install --frozen-lockfile && pnpm build
-    staticPublishPath: ./client/dist
+    buildCommand: corepack enable && cd splitsync/client && pnpm install --frozen-lockfile && pnpm build
+    staticPublishPath: ./splitsync/client/dist
     envVars:
       - key: VITE_API_URL
         value: https://splitsync-api.onrender.com/api
