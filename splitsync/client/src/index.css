@@ -1,25 +1,41 @@
 @import "tailwindcss";
 
 :root {
-    --text: #6b6375;
-    --text-h: #08060d;
-    --bg: #fff;
-    --surface: #fff;
-    --border: #e5e4e7;
-    --accent: #aa3bff;
-    --accent-border: rgba(170, 59, 255, 0.5);
+    --text: #57657a;
+    --text-h: #0b1220;
+    --bg: #f3f6fb;
+    --surface: #ffffff;
+    --surface-2: #e9f0fa;
+    --border: #d8e2f0;
+    --accent: #1d4ed8;
+    --accent-2: #0284c7;
+    --accent-border: rgba(29, 78, 216, 0.35);
+    --accent-soft: rgba(29, 78, 216, 0.1);
+    --success: #16a34a;
+    --success-soft: rgba(22, 163, 74, 0.12);
+    --danger: #dc2626;
+    --danger-soft: rgba(220, 38, 38, 0.12);
+    --warning: #d97706;
+    --shadow-color: 220deg 45% 45%;
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --text: #9ca3af;
-        --text-h: #f3f4f6;
-        --bg: #16171d;
-        --surface: #1c1d24;
-        --border: #2e303a;
-        --accent: #3b62d6;
-        --accent-border: rgba(59, 98, 214, 0.5);
-    }
+:root[data-theme="dark"] {
+    --text: #93a4bd;
+    --text-h: #eef2f9;
+    --bg: #0a1120;
+    --surface: #121b30;
+    --surface-2: #18233c;
+    --border: #263250;
+    --accent: #3b82f6;
+    --accent-2: #38bdf8;
+    --accent-border: rgba(59, 130, 246, 0.4);
+    --accent-soft: rgba(59, 130, 246, 0.16);
+    --success: #4ade80;
+    --success-soft: rgba(74, 222, 128, 0.14);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.14);
+    --warning: #fbbf24;
+    --shadow-color: 220deg 65% 8%;
 }
 
 body {
@@ -28,6 +44,25 @@ body {
     background: var(--bg);
     color: var(--text);
     font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+#root {
+    min-height: 100svh;
+}
+
+.brand-gradient {
+    background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.brand-gradient-text {
+    background-image: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.surface-shadow {
+    box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 8px 24px -8px hsl(var(--shadow-color) / 0.18);
 }
 
 /* Native number-input spinners render as a separate light widget that ignores

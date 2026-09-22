@@ -2,7 +2,7 @@
   "name": "splitsync",
   "private": true,
   "scripts": {
-    "dev": "concurrently -n API,CLIENT -c blue,magenta \"dotnet run --project server\" \"pnpm --dir client dev\""
+    "dev": "node scripts/ensure-postgres.mjs && concurrently -n API,CLIENT -c blue,magenta \"dotnet run --project server\" \"pnpm --dir client dev\""
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

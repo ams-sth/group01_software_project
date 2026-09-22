@@ -97,7 +97,7 @@ function NotificationBell() {
         onClick={() => (isOpen ? setIsOpen(false) : openDropdown())}
         aria-label="Notifications"
         aria-expanded={isOpen}
-        className="relative cursor-pointer rounded-full p-1.5 text-(--text-h) hover:bg-(--surface)"
+        className="relative cursor-pointer rounded-full p-2 text-(--text-h) hover:bg-(--surface-2)"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -115,7 +115,7 @@ function NotificationBell() {
           />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-(--danger) px-1 text-[10px] font-semibold text-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -124,7 +124,7 @@ function NotificationBell() {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 z-50 mt-2 w-80 max-w-[90vw] rounded-lg border p-2 border-(--border) bg-(--surface) shadow-lg">
+          <div className="surface-shadow absolute right-0 z-50 mt-2 w-80 max-w-[90vw] rounded-xl border p-2 border-(--border) bg-(--surface)">
             <div className="flex items-center justify-between px-1 pb-1">
               <p className="text-xs font-semibold text-(--text-h)">Notifications</p>
               {notifications.some((n) => !n.isRead) && (
@@ -139,7 +139,7 @@ function NotificationBell() {
             </div>
 
             {isLoading && <p className="px-1 py-2 text-xs text-(--text)">Loading…</p>}
-            {error && <p className="px-1 py-2 text-xs text-red-500">{error}</p>}
+            {error && <p className="px-1 py-2 text-xs text-(--danger)">{error}</p>}
             {!isLoading && !error && notifications.length === 0 && (
               <p className="px-1 py-2 text-xs text-(--text)">No notifications yet.</p>
             )}

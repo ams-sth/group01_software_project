@@ -114,10 +114,10 @@ function AddExpenseModal({
         aria-modal="true"
         aria-label={isEditing ? 'Edit expense' : 'Add expense'}
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-sm rounded-lg border p-4 border-(--border) bg-(--surface)"
+        className="surface-shadow w-full max-w-md rounded-2xl border p-5 border-(--border) bg-(--surface)"
       >
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-(--text-h)">{isEditing ? 'Edit expense' : 'Add expense'}</p>
+          <p className="text-base font-semibold text-(--text-h)">{isEditing ? 'Edit expense' : 'Add expense'}</p>
           <button
             type="button"
             onClick={onClose}
@@ -199,18 +199,18 @@ function AddExpenseModal({
           </div>
 
           {splitMethod === 'unequal' && (
-            <p className={`text-[11px] ${isUnequalValid ? 'text-(--text)' : 'text-amber-500'}`}>
+            <p className={`text-[11px] ${isUnequalValid ? 'text-(--text)' : 'text-(--warning)'}`}>
               Amounts total ${splitValuesTotal.toFixed(2)} of ${parsedAmount.toFixed(2)}
             </p>
           )}
           {splitMethod === 'percentage' && (
-            <p className={`text-[11px] ${isPercentageValid ? 'text-(--text)' : 'text-amber-500'}`}>
+            <p className={`text-[11px] ${isPercentageValid ? 'text-(--text)' : 'text-(--warning)'}`}>
               Percentages total {splitValuesTotal}% of 100%
             </p>
           )}
 
           {saveError && (
-            <p role="alert" className="text-xs text-red-500">
+            <p role="alert" className="text-xs text-(--danger)">
               {saveError}
             </p>
           )}

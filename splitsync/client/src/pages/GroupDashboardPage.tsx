@@ -117,7 +117,7 @@ function GroupDashboardPage() {
 
   if (isLoadingGroup) {
     return (
-      <main className="mx-auto max-w-2xl p-8">
+      <main className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
         <p className="text-sm text-(--text)">Loading group…</p>
       </main>
     )
@@ -125,8 +125,8 @@ function GroupDashboardPage() {
 
   if (!group) {
     return (
-      <main className="mx-auto max-w-2xl p-8">
-        <p className="text-sm text-red-500">{groupError ?? 'Group not found.'}</p>
+      <main className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
+        <p className="text-sm text-(--danger)">{groupError ?? 'Group not found.'}</p>
         <Link to="/groups" className="mt-2 inline-block text-sm text-(--accent) hover:underline">
           Back to groups
         </Link>
@@ -274,12 +274,12 @@ function GroupDashboardPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl p-8">
-      <Link to="/groups" className="text-sm text-(--accent) hover:underline">
+    <main className="mx-auto max-w-6xl px-6 py-10 sm:px-10 sm:py-14">
+      <Link to="/groups" className="text-sm font-medium text-(--accent) hover:underline">
         ← Back to groups
       </Link>
 
-      <div className="mt-2 flex items-center justify-between gap-2">
+      <div className="mt-3 flex items-center justify-between gap-2">
         {isRenaming ? (
           <form onSubmit={handleRename} className="flex flex-1 gap-2">
             <input
@@ -310,16 +310,16 @@ function GroupDashboardPage() {
             </button>
           </form>
         ) : (
-          <h1 className="text-2xl font-semibold text-(--text-h)">{group.name}</h1>
+          <h1 className="text-3xl font-bold text-(--text-h)">{group.name}</h1>
         )}
       </div>
       {renameError && (
-        <p role="alert" className="mt-1 text-xs text-red-500">
+        <p role="alert" className="mt-1 text-xs text-(--danger)">
           {renameError}
         </p>
       )}
 
-      <div className="mt-4 flex gap-1 rounded-lg border p-0.5 border-(--border)" role="tablist" aria-label="Group sections">
+      <div className="mt-6 flex gap-1 rounded-xl border p-1 border-(--border) bg-(--surface) sm:inline-flex" role="tablist" aria-label="Group sections">
         {(['overview', 'transactions', 'members'] as const).map((t) => (
           <button
             key={t}
@@ -327,8 +327,8 @@ function GroupDashboardPage() {
             role="tab"
             aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className={`flex-1 cursor-pointer rounded-md py-1.5 text-xs font-medium capitalize ${
-              tab === t ? 'bg-(--accent) text-white' : 'text-(--text)'
+            className={`flex-1 cursor-pointer rounded-lg px-5 py-2 text-sm font-medium capitalize transition sm:flex-none ${
+              tab === t ? 'bg-(--accent) text-white' : 'text-(--text) hover:text-(--text-h)'
             }`}
           >
             {t}
@@ -337,24 +337,29 @@ function GroupDashboardPage() {
       </div>
 
       {tab === 'overview' && (
-        <div className="mt-4">
-          <div className="rounded-lg border p-4 border-(--border) bg-(--surface)">
-            <p className="text-xs font-semibold text-(--text-h)">Balances</p>
-            {isLoadingBalances && <p className="mt-1 text-xs text-(--text)">Loading balances…</p>}
-            {balancesError && <p className="mt-1 text-xs text-red-500">{balancesError}</p>}
+        <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div className="surface-shadow rounded-2xl border p-6 border-(--border) bg-(--surface) lg:col-span-2">
+            <p className="text-sm font-semibold text-(--text-h)">Balances</p>
+            {isLoadingBalances && <p className="mt-2 text-sm text-(--text)">Loading balances…</p>}
+            {balancesError && <p className="mt-2 text-sm text-(--danger)">{balancesError}</p>}
             {!isLoadingBalances && !balancesError && balances && (
               <>
-                <p className="mt-1 text-sm font-semibold text-(--text-h)">{balanceSummaryText}</p>
+                <p className="mt-1 text-2xl font-bold text-(--text-h)">{balanceSummaryText}</p>
                 {balances.balances.length === 0 ? (
-                  <p className="mt-1 text-xs text-(--text)">No balances yet.</p>
+                  <p className="mt-2 text-sm text-(--text)">No balances yet.</p>
                 ) : (
-                  <ul className="mt-2 flex flex-col gap-1.5">
+                  <ul className="mt-4 flex flex-col gap-2">
                     {balances.balances.map((balance) => (
-                      <li key={balance.username} className="flex items-center justify-between text-xs">
-                        <span className="text-(--text-h)">{balance.username}</span>
+                      <li
+                        key={balance.username}
+                        className="flex items-center justify-between rounded-xl bg-(--surface-2) px-4 py-3 text-sm"
+                      >
+                        <span className="font-medium text-(--text-h)">{balance.username}</span>
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                            balance.netAmount > 0 ? 'bg-green-500/15 text-green-600' : 'bg-red-500/15 text-red-600'
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            balance.netAmount > 0
+                              ? 'bg-(--success-soft) text-(--success)'
+                              : 'bg-(--danger-soft) text-(--danger)'
                           }`}
                         >
                           {balance.netAmount > 0
@@ -367,13 +372,11 @@ function GroupDashboardPage() {
                 )}
               </>
             )}
-          </div>
 
-          <div className="mt-3 flex gap-2">
             <button
               type="button"
               onClick={() => setIsAddExpenseOpen(true)}
-              className="cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold text-white bg-(--accent) hover:opacity-90"
+              className="mt-5 cursor-pointer rounded-lg px-5 py-2.5 text-sm font-semibold text-white bg-(--accent) hover:opacity-90"
             >
               + Add expense
             </button>
@@ -382,14 +385,14 @@ function GroupDashboardPage() {
           {otherMembers.length > 0 && (
             <form
               onSubmit={handleRecordSettlement}
-              className="mt-3 flex flex-col gap-2 rounded-lg border p-3 border-(--border)"
+              className="surface-shadow flex flex-col gap-3 rounded-2xl border p-6 border-(--border) bg-(--surface)"
             >
-              <p className="text-xs font-semibold text-(--text-h)">Record settlement</p>
-              <div className="flex gap-2">
+              <p className="text-sm font-semibold text-(--text-h)">Record settlement</p>
+              <div className="flex flex-col gap-2">
                 <select
                   value={effectiveSettleUsername}
                   onChange={(event) => setSettleUsername(event.target.value)}
-                  className="flex-1 rounded-lg border px-2 py-1.5 text-xs bg-(--bg) border-(--border) text-(--text-h)"
+                  className="rounded-lg border px-2 py-2 text-xs bg-(--bg) border-(--border) text-(--text-h)"
                 >
                   {otherMembers.map((memberUsername) => (
                     <option key={memberUsername} value={memberUsername}>
@@ -400,7 +403,7 @@ function GroupDashboardPage() {
                 <select
                   value={settleDirection}
                   onChange={(event) => setSettleDirection(event.target.value as 'i_paid' | 'they_paid')}
-                  className="rounded-lg border px-2 py-1.5 text-xs bg-(--bg) border-(--border) text-(--text-h)"
+                  className="rounded-lg border px-2 py-2 text-xs bg-(--bg) border-(--border) text-(--text-h)"
                 >
                   <option value="i_paid">I paid them</option>
                   <option value="they_paid">They paid me</option>
@@ -415,51 +418,54 @@ function GroupDashboardPage() {
                   required
                   value={settleAmount}
                   onChange={(event) => setSettleAmount(event.target.value)}
-                  className="flex-1 rounded-lg border px-2 py-1.5 text-xs bg-(--bg) border-(--border) text-(--text-h)"
+                  className="flex-1 rounded-lg border px-2 py-2 text-xs bg-(--bg) border-(--border) text-(--text-h)"
                 />
                 <button
                   type="submit"
                   disabled={isRecordingSettlement}
-                  className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-white bg-(--accent) hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold text-white bg-(--accent) hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isRecordingSettlement ? 'Recording…' : 'Record'}
                 </button>
               </div>
+              {settleError && (
+                <p role="alert" className="text-xs text-(--danger)">
+                  {settleError}
+                </p>
+              )}
             </form>
-          )}
-          {settleError && (
-            <p role="alert" className="mt-1 text-xs text-red-500">
-              {settleError}
-            </p>
           )}
         </div>
       )}
 
       {tab === 'transactions' && (
-        <div className="mt-4 flex flex-col gap-2">
-          {isLoadingTransactions && <p className="text-xs text-(--text)">Loading transactions…</p>}
-          {transactionsError && <p className="text-xs text-red-500">{transactionsError}</p>}
+        <div className="mt-6 flex flex-col gap-3">
+          {isLoadingTransactions && <p className="text-sm text-(--text)">Loading transactions…</p>}
+          {transactionsError && <p className="text-sm text-(--danger)">{transactionsError}</p>}
           {deleteExpenseError && (
-            <p role="alert" className="text-xs text-red-500">
+            <p role="alert" className="text-sm text-(--danger)">
               {deleteExpenseError}
             </p>
           )}
           {!isLoadingTransactions && !transactionsError && transactions.length === 0 && (
-            <p className="text-xs text-(--text)">No transactions yet.</p>
+            <p className="text-sm text-(--text)">No transactions yet.</p>
           )}
           {transactions.map((item) =>
             item.kind === 'expense' ? (
-              <div key={`expense-${item.id}`} className="rounded-md border p-2 border-(--border) bg-(--surface)">
+              <div
+                key={`expense-${item.id}`}
+                className="surface-shadow rounded-xl border p-4 border-(--border) bg-(--surface)"
+              >
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold text-(--text-h)">{item.data.description}</p>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <p className="text-xs text-(--text-h)">${item.data.amount.toFixed(2)}</p>
+                  <p className="text-sm font-semibold text-(--text-h)">{item.data.description}</p>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <p className="text-sm font-semibold text-(--text-h)">${item.data.amount.toFixed(2)}</p>
                     {item.data.paidByUsername === currentUsername && (
                       <>
                         <button
                           type="button"
                           onClick={() => setEditingExpense(item.data)}
-                          className="cursor-pointer text-[11px] text-(--accent) hover:underline"
+                          className="cursor-pointer text-xs font-medium text-(--accent) hover:underline"
                         >
                           Edit
                         </button>
@@ -467,7 +473,7 @@ function GroupDashboardPage() {
                           type="button"
                           onClick={() => handleDeleteExpense(item.data.id, item.data.description)}
                           disabled={deletingExpenseId === item.data.id}
-                          className="cursor-pointer text-[11px] text-red-500 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cursor-pointer text-xs font-medium text-(--danger) hover:underline disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {deletingExpenseId === item.data.id ? 'Deleting…' : 'Delete'}
                         </button>
@@ -475,8 +481,8 @@ function GroupDashboardPage() {
                     )}
                   </div>
                 </div>
-                <p className="mt-0.5 text-[11px] text-(--text)">Paid by {item.data.paidByUsername}</p>
-                <p className="text-[11px] text-(--text)">
+                <p className="mt-1 text-xs text-(--text)">Paid by {item.data.paidByUsername}</p>
+                <p className="text-xs text-(--text)">
                   Split{' '}
                   {item.data.splitMethod === 'equal'
                     ? 'equally'
@@ -487,12 +493,19 @@ function GroupDashboardPage() {
                 </p>
               </div>
             ) : (
-              <div key={`settlement-${item.id}`} className="rounded-md border p-2 border-(--border) bg-(--surface)">
+              <div
+                key={`settlement-${item.id}`}
+                className="surface-shadow rounded-xl border p-4 border-(--border) bg-(--surface)"
+              >
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-(--text-h)">Settlement</p>
-                  <p className="text-xs text-(--text-h)">${item.data.amount.toFixed(2)}</p>
+                  <p className="text-sm font-semibold text-(--text-h)">
+                    <span className="mr-2 rounded-full bg-(--success-soft) px-2 py-0.5 text-xs text-(--success)">
+                      Settlement
+                    </span>
+                  </p>
+                  <p className="text-sm font-semibold text-(--text-h)">${item.data.amount.toFixed(2)}</p>
                 </div>
-                <p className="mt-0.5 text-[11px] text-(--text)">
+                <p className="mt-1 text-xs text-(--text)">
                   {item.data.fromUsername} paid {item.data.toUsername}
                 </p>
               </div>
@@ -502,15 +515,15 @@ function GroupDashboardPage() {
       )}
 
       {tab === 'members' && (
-        <div className="mt-4">
-          <p className="text-xs text-(--text)">
-            {group.memberUsernames.length} member{group.memberUsernames.length === 1 ? '' : 's'}:
+        <div className="surface-shadow mt-6 rounded-2xl border p-6 border-(--border) bg-(--surface)">
+          <p className="text-sm text-(--text)">
+            {group.memberUsernames.length} member{group.memberUsernames.length === 1 ? '' : 's'}
           </p>
-          <ul className="mt-1 flex flex-wrap gap-1.5">
+          <ul className="mt-3 flex flex-wrap gap-2">
             {group.memberUsernames.map((memberUsername) => (
               <li
                 key={memberUsername}
-                className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs border-(--border) text-(--text)"
+                className="flex items-center gap-1.5 rounded-full bg-(--surface-2) px-3 py-1.5 text-sm text-(--text-h)"
               >
                 {memberUsername}
                 {isCreator && memberUsername !== group.creatorUsername && (
@@ -519,7 +532,7 @@ function GroupDashboardPage() {
                     onClick={() => handleRemoveMember(memberUsername)}
                     disabled={removingUsername === memberUsername}
                     aria-label={`Remove ${memberUsername}`}
-                    className="cursor-pointer text-red-500 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="cursor-pointer text-(--danger) hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     ×
                   </button>
@@ -528,46 +541,46 @@ function GroupDashboardPage() {
             ))}
           </ul>
           {removeMemberError && (
-            <p role="alert" className="mt-1 text-xs text-red-500">
+            <p role="alert" className="mt-2 text-xs text-(--danger)">
               {removeMemberError}
             </p>
           )}
 
-          <p className="mt-2 text-xs text-(--text)">
+          <p className="mt-4 text-xs text-(--text)">
             Group ID (share to invite): <span className="font-mono">{group.id}</span>
           </p>
 
           {isCreator && (
-            <form onSubmit={handleAddMember} className="mt-3 flex gap-2">
+            <form onSubmit={handleAddMember} className="mt-4 flex gap-2">
               <input
                 type="text"
                 placeholder="Add member by username"
                 required
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
-                className="flex-1 rounded-lg border px-2 py-1.5 text-xs bg-(--bg) border-(--border) text-(--text-h)"
+                className="flex-1 rounded-lg border px-3 py-2 text-sm bg-(--bg) border-(--border) text-(--text-h)"
               />
               <button
                 type="submit"
                 disabled={isAdding}
-                className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold text-white bg-(--accent) hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold text-white bg-(--accent) hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isAdding ? 'Adding…' : 'Add'}
               </button>
             </form>
           )}
           {addError && (
-            <p role="alert" className="mt-1 text-xs text-red-500">
+            <p role="alert" className="mt-1 text-xs text-(--danger)">
               {addError}
             </p>
           )}
 
-          <div className="mt-4 flex gap-3 border-t pt-3 border-(--border) text-xs">
+          <div className="mt-6 flex gap-4 border-t pt-4 border-(--border) text-sm">
             {isCreator && (
               <button
                 type="button"
                 onClick={() => setIsRenaming(true)}
-                className="cursor-pointer text-(--accent) hover:underline"
+                className="cursor-pointer font-medium text-(--accent) hover:underline"
               >
                 Rename group
               </button>
@@ -577,7 +590,7 @@ function GroupDashboardPage() {
                 type="button"
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="cursor-pointer text-red-500 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer font-medium text-(--danger) hover:underline disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isDeleting ? 'Deleting…' : 'Delete group'}
               </button>
@@ -586,19 +599,19 @@ function GroupDashboardPage() {
                 type="button"
                 onClick={handleLeave}
                 disabled={isLeaving}
-                className="cursor-pointer text-red-500 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                className="cursor-pointer font-medium text-(--danger) hover:underline disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isLeaving ? 'Leaving…' : 'Leave group'}
               </button>
             )}
           </div>
           {deleteError && (
-            <p role="alert" className="mt-1 text-xs text-red-500">
+            <p role="alert" className="mt-1 text-xs text-(--danger)">
               {deleteError}
             </p>
           )}
           {leaveError && (
-            <p role="alert" className="mt-1 text-xs text-red-500">
+            <p role="alert" className="mt-1 text-xs text-(--danger)">
               {leaveError}
             </p>
           )}
