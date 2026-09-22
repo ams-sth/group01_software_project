@@ -38,3 +38,14 @@ Check the wire-up: visit `http://localhost:5173`, then hit `http://localhost:508
 server/   ASP.NET Core Web API (controllers)
 client/   React + TypeScript (Vite)
 ```
+
+## Deploy
+
+`render.yaml` is a [Render Blueprint](https://render.com/docs/blueprint-spec) that provisions everything on Render's free tier: a Postgres database, the API as a Docker web service (`server/Dockerfile`), and the client as a static site.
+
+1. Push this repo to GitHub, then on Render: **New > Blueprint**, point it at the repo. Render reads `render.yaml` and creates all three resources.
+2. It wires up the API's connection string and JWT signing key automatically (`generateValue: true`), and points the client at the API via `VITE_API_URL`.
+3. Before the first deploy finishes, EF Core migrations run automatically via the API's pre-deploy command (`dotnet SplitSync.Api.dll --migrate`) — no manual `dotnet ef database update` needed.
+4. If you rename the services in `render.yaml`, update the `Cors__AllowedOrigin` and `VITE_API_URL` values to match the new `*.onrender.com` URLs.
+
+Free-tier services spin down after inactivity, so the first request after idling can take ~30s to wake up.
