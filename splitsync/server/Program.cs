@@ -70,15 +70,15 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Run with `--migrate` as a one-off deploy step (e.g. Render's pre-deploy command) to apply
-// pending EF Core migrations, instead of migrating on every boot. Keeping this out of the
-// normal startup path also avoids WebApplicationFactory-based tests picking up this app's own
-// (non-test) database registration before their service overrides are applied.
-if (args.Contains("--migrate"))
+// Apply pending EF Core migrations on boot in Production only. Render's free tier doesn't
+// support a separate pre-deploy step, so this runs inline instead. Gating on IsProduction()
+// (local dev and the test suite both run as Development) keeps WebApplicationFactory-based
+// tests from hitting this app's own (non-test) database registration before their service
+// overrides are applied.
+if (app.Environment.IsProduction())
 {
     using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
-    return;
 }
 
 // Configure the HTTP request pipeline.
