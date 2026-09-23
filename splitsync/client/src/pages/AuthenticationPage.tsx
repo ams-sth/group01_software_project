@@ -6,11 +6,29 @@ import ThemeToggle from '../components/ThemeToggle'
 
 type Mode = 'signin' | 'create'
 
+function EyeIcon({ isOpen }: { isOpen: boolean }) {
+  if (isOpen) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    )
+  }
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2 12s3.6-7 10-7c1.7 0 3.15.42 4.36 1.03M22 12s-3.6 7-10 7c-1.7 0-3.15-.42-4.36-1.03M4 4l16 16" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    </svg>
+  )
+}
+
 function AuthenticationPage() {
   const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('signin')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -119,18 +137,29 @@ function AuthenticationPage() {
           <label htmlFor="password" className="mt-2.5 text-[13px] text-(--text-h)">
             Password
           </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            placeholder="••••••••"
-            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-            required
-            minLength={8}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="rounded-lg border px-3 py-2.5 text-sm bg-(--surface) border-(--border) text-(--text-h) focus:outline-2 focus:outline-offset-1 focus:outline-(--accent-border)"
-          />
+          <div className="relative">
+            <input
+              id="password"
+              name="password"
+              type={isPasswordVisible ? 'text' : 'password'}
+              placeholder="••••••••"
+              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              required
+              minLength={8}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="w-full rounded-lg border px-3 py-2.5 pr-10 text-sm bg-(--surface) border-(--border) text-(--text-h) focus:outline-2 focus:outline-offset-1 focus:outline-(--accent-border)"
+            />
+            <button
+              type="button"
+              onClick={() => setIsPasswordVisible((current) => !current)}
+              aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
+              aria-pressed={isPasswordVisible}
+              className="absolute inset-y-0 right-0 flex cursor-pointer items-center px-3 text-(--text) hover:text-(--text-h)"
+            >
+              <EyeIcon isOpen={isPasswordVisible} />
+            </button>
+          </div>
 
           {error && (
             <p role="alert" className="mt-1 text-xs text-(--danger)">

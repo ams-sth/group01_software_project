@@ -16,25 +16,30 @@ function distributeEvenly(total: number, count: number): number[] {
   return Array.from({ length: count }, (_, index) => (index < remainderUnits ? base + 1 : base))
 }
 
-function autoBalancePercentages(
+// `decimals` is 0 for percentage points, 2 for dollar cents — everything is distributed
+// in integer "units" at that precision so shares always add up exactly to `target`.
+function autoBalanceSplit(
   values: Record<string, string>,
   selectedList: string[],
   overridden: Set<string>,
+  target: number,
+  decimals: number,
 ): Record<string, string> {
   const toDistribute = selectedList.filter((username) => !overridden.has(username))
   if (toDistribute.length === 0) {
     return values
   }
 
-  const overriddenTotal = selectedList
+  const scale = 10 ** decimals
+  const overriddenTotalUnits = selectedList
     .filter((username) => overridden.has(username))
-    .reduce((sum, username) => sum + (Number(values[username]) || 0), 0)
+    .reduce((sum, username) => sum + Math.round((Number(values[username]) || 0) * scale), 0)
 
-  const shares = distributeEvenly(100 - overriddenTotal, toDistribute.length)
+  const shareUnits = distributeEvenly(Math.round(target * scale) - overriddenTotalUnits, toDistribute.length)
 
   const next = { ...values }
   toDistribute.forEach((username, index) => {
-    next[username] = String(shares[index])
+    next[username] = (shareUnits[index] / scale).toFixed(decimals)
   })
   return next
 }
@@ -78,7 +83,7 @@ function AddExpenseModal({
   )
   const [splitValues, setSplitValues] = useState<Record<string, string>>(initialSplitValues(expense))
   const [overriddenUsernames, setOverriddenUsernames] = useState<Set<string>>(
-    () => new Set(expense?.splitMethod === 'percentage' ? expense.shares.map((share) => share.username) : []),
+    () => new Set(expense && expense.splitMethod !== 'equal' ? expense.shares.map((share) => share.username) : []),
   )
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -104,16 +109,18 @@ function AddExpenseModal({
   }
 
   const selectedList = memberUsernames.filter((memberUsername) => selectedUsernames.has(memberUsername))
+  const parsedAmount = Number(amount) || 0
 
   useEffect(() => {
-    if (splitMethod !== 'percentage') return
+    if (splitMethod === 'equal') return
     const cleanedOverridden = new Set([...overriddenUsernames].filter((username) => selectedUsernames.has(username)))
     setOverriddenUsernames(cleanedOverridden)
-    setSplitValues((current) => autoBalancePercentages(current, selectedList, cleanedOverridden))
+    const target = splitMethod === 'percentage' ? 100 : parsedAmount
+    const decimals = splitMethod === 'percentage' ? 0 : 2
+    setSplitValues((current) => autoBalanceSplit(current, selectedList, cleanedOverridden, target, decimals))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUsernames, splitMethod])
+  }, [selectedUsernames, splitMethod, parsedAmount])
 
-  const parsedAmount = Number(amount) || 0
   const splitValuesTotal = selectedList.reduce((sum, memberUsername) => sum + (Number(splitValues[memberUsername]) || 0), 0)
   const isUnequalValid = Math.abs(splitValuesTotal - parsedAmount) < 0.005
   const isPercentageValid = Math.abs(splitValuesTotal - 100) < 0.005
@@ -232,19 +239,27 @@ function AddExpenseModal({
                     min="0"
                     placeholder={splitMethod === 'percentage' ? '%' : '$'}
                     value={splitValues[memberUsername] ?? ''}
-                    onChange={(event) => {
-                      const rawValue = event.target.value
-                      if (splitMethod === 'percentage') {
-                        const nextOverridden = new Set(overriddenUsernames).add(memberUsername)
-                        setOverriddenUsernames(nextOverridden)
-                        setSplitValues((current) =>
-                          autoBalancePercentages({ ...current, [memberUsername]: rawValue }, selectedList, nextOverridden),
-                        )
-                      } else {
-                        setSplitValues((current) => ({ ...current, [memberUsername]: rawValue }))
+                    onFocus={(event) => {
+                      // Browsers auto-select an input's text on Tab-focus but not on click-focus;
+                      // select explicitly so both let you type over a suggestion without backspacing it first.
+                      event.target.select()
+                      if (!overriddenUsernames.has(memberUsername)) {
+                        setOverriddenUsernames((current) => new Set(current).add(memberUsername))
                       }
                     }}
-                    className="w-16 rounded border px-1.5 py-0.5 text-right text-xs bg-(--bg) border-(--border) text-(--text-h)"
+                    onChange={(event) => {
+                      const rawValue = event.target.value
+                      const nextOverridden = new Set(overriddenUsernames).add(memberUsername)
+                      setOverriddenUsernames(nextOverridden)
+                      const target = splitMethod === 'percentage' ? 100 : parsedAmount
+                      const decimals = splitMethod === 'percentage' ? 0 : 2
+                      setSplitValues((current) =>
+                        autoBalanceSplit({ ...current, [memberUsername]: rawValue }, selectedList, nextOverridden, target, decimals),
+                      )
+                    }}
+                    className={`w-16 rounded border px-1.5 py-0.5 text-right text-xs bg-(--bg) border-(--border) ${
+                      overriddenUsernames.has(memberUsername) ? 'text-(--text-h)' : 'italic text-(--text)'
+                    }`}
                   />
                 )}
               </label>
