@@ -88,6 +88,10 @@ export function addMember(groupId: string, username: string) {
   })
 }
 
+export function searchMemberCandidates(groupId: string, query: string) {
+  return request<string[]>(`/groups/${groupId}/member-candidates?q=${encodeURIComponent(query)}`)
+}
+
 export function joinGroup(groupId: string) {
   return request<GroupResponse>(`/groups/${groupId}/join`, {
     method: 'POST',

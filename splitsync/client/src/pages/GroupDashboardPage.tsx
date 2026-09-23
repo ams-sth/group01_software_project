@@ -1,14 +1,11 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import AddExpenseModal from "../components/AddExpenseModal";
 import {
-	ApiError,
 	addMember,
+	ApiError,
 	deleteExpense,
 	deleteGroup,
-	type ExpenseResponse,
-	type GroupBalancesResponse,
-	type GroupResponse,
 	getBalances,
 	leaveGroup,
 	listExpenses,
@@ -17,6 +14,9 @@ import {
 	recordSettlement,
 	removeMember,
 	renameGroup,
+	type ExpenseResponse,
+	type GroupBalancesResponse,
+	type GroupResponse,
 	type SettlementResponse,
 } from "../lib/api";
 import { getCurrentUser } from "../lib/session";
