@@ -174,6 +174,43 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
         return NoContent();
     }
 
+    [HttpGet("{id}/member-candidates")]
+    public async Task<ActionResult<List<string>>> SearchMemberCandidates(Guid id, [FromQuery] string q)
+    {
+        var userId = User.FindFirst("sub")!.Value;
+
+        var group = await db.Groups.FirstOrDefaultAsync(g => g.Id == id);
+        if (group is null)
+        {
+            return NotFound(new { message = "Group not found." });
+        }
+
+        if (group.CreatorId != userId)
+        {
+            return Forbid();
+        }
+
+        if (string.IsNullOrWhiteSpace(q) || q.Trim().Length < 2)
+        {
+            return Ok(new List<string>());
+        }
+
+        var existingUsernames = await db.GroupMembers
+            .Where(gm => gm.GroupId == id)
+            .Select(gm => gm.User.UserName!)
+            .ToListAsync();
+
+        var trimmedQuery = q.Trim();
+        var matches = await userManager.Users
+            .Where(u => u.UserName != null && EF.Functions.ILike(u.UserName, $"%{trimmedQuery}%"))
+            .OrderBy(u => u.UserName)
+            .Select(u => u.UserName!)
+            .Take(10)
+            .ToListAsync();
+
+        return Ok(matches.Where(username => !existingUsernames.Contains(username)).Take(5).ToList());
+    }
+
     [HttpPost("{id}/members")]
     public async Task<ActionResult<GroupResponse>> AddMember(Guid id, AddMemberRequest request)
     {

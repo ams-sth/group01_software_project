@@ -8,6 +8,37 @@ import {
   type SplitMethod,
 } from '../lib/api'
 
+function distributeEvenly(total: number, count: number): number[] {
+  if (count <= 0) return []
+  const clampedTotal = Math.max(0, Math.round(total))
+  const base = Math.floor(clampedTotal / count)
+  const remainderUnits = clampedTotal - base * count
+  return Array.from({ length: count }, (_, index) => (index < remainderUnits ? base + 1 : base))
+}
+
+function autoBalancePercentages(
+  values: Record<string, string>,
+  selectedList: string[],
+  overridden: Set<string>,
+): Record<string, string> {
+  const toDistribute = selectedList.filter((username) => !overridden.has(username))
+  if (toDistribute.length === 0) {
+    return values
+  }
+
+  const overriddenTotal = selectedList
+    .filter((username) => overridden.has(username))
+    .reduce((sum, username) => sum + (Number(values[username]) || 0), 0)
+
+  const shares = distributeEvenly(100 - overriddenTotal, toDistribute.length)
+
+  const next = { ...values }
+  toDistribute.forEach((username, index) => {
+    next[username] = String(shares[index])
+  })
+  return next
+}
+
 function initialSplitValues(expense: ExpenseResponse | undefined): Record<string, string> {
   if (!expense) return {}
   if (expense.splitMethod === 'unequal') {
@@ -46,6 +77,9 @@ function AddExpenseModal({
     new Set(expense ? expense.shares.map((share) => share.username) : memberUsernames),
   )
   const [splitValues, setSplitValues] = useState<Record<string, string>>(initialSplitValues(expense))
+  const [overriddenUsernames, setOverriddenUsernames] = useState<Set<string>>(
+    () => new Set(expense?.splitMethod === 'percentage' ? expense.shares.map((share) => share.username) : []),
+  )
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
@@ -70,6 +104,15 @@ function AddExpenseModal({
   }
 
   const selectedList = memberUsernames.filter((memberUsername) => selectedUsernames.has(memberUsername))
+
+  useEffect(() => {
+    if (splitMethod !== 'percentage') return
+    const cleanedOverridden = new Set([...overriddenUsernames].filter((username) => selectedUsernames.has(username)))
+    setOverriddenUsernames(cleanedOverridden)
+    setSplitValues((current) => autoBalancePercentages(current, selectedList, cleanedOverridden))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedUsernames, splitMethod])
+
   const parsedAmount = Number(amount) || 0
   const splitValuesTotal = selectedList.reduce((sum, memberUsername) => sum + (Number(splitValues[memberUsername]) || 0), 0)
   const isUnequalValid = Math.abs(splitValuesTotal - parsedAmount) < 0.005
@@ -160,6 +203,7 @@ function AddExpenseModal({
                 onClick={() => {
                   setSplitMethod(method)
                   setSplitValues({})
+                  setOverriddenUsernames(new Set())
                 }}
                 className={`flex-1 cursor-pointer rounded-md py-1 text-[11px] font-medium capitalize ${
                   splitMethod === method ? 'bg-(--accent) text-white' : 'text-(--text)'
@@ -188,9 +232,18 @@ function AddExpenseModal({
                     min="0"
                     placeholder={splitMethod === 'percentage' ? '%' : '$'}
                     value={splitValues[memberUsername] ?? ''}
-                    onChange={(event) =>
-                      setSplitValues((current) => ({ ...current, [memberUsername]: event.target.value }))
-                    }
+                    onChange={(event) => {
+                      const rawValue = event.target.value
+                      if (splitMethod === 'percentage') {
+                        const nextOverridden = new Set(overriddenUsernames).add(memberUsername)
+                        setOverriddenUsernames(nextOverridden)
+                        setSplitValues((current) =>
+                          autoBalancePercentages({ ...current, [memberUsername]: rawValue }, selectedList, nextOverridden),
+                        )
+                      } else {
+                        setSplitValues((current) => ({ ...current, [memberUsername]: rawValue }))
+                      }
+                    }}
                     className="w-16 rounded border px-1.5 py-0.5 text-right text-xs bg-(--bg) border-(--border) text-(--text-h)"
                   />
                 )}
