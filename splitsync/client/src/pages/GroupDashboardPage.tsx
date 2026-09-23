@@ -14,6 +14,7 @@ import {
   recordSettlement,
   removeMember,
   renameGroup,
+  searchMemberCandidates,
   type ExpenseResponse,
   type GroupBalancesResponse,
   type GroupResponse,
@@ -60,6 +61,8 @@ function GroupDashboardPage() {
   const [username, setUsername] = useState('')
   const [isAdding, setIsAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([])
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
 
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState('')
@@ -114,6 +117,32 @@ function GroupDashboardPage() {
     refreshBalances()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  useEffect(() => {
+    if (!group || group.creatorUsername !== currentUsername) return
+
+    const query = username.trim()
+    if (query.length < 2) {
+      setUsernameSuggestions([])
+      return
+    }
+
+    let cancelled = false
+    const timeoutId = window.setTimeout(() => {
+      searchMemberCandidates(group.id, query)
+        .then((results) => {
+          if (!cancelled) setUsernameSuggestions(results)
+        })
+        .catch(() => {
+          if (!cancelled) setUsernameSuggestions([])
+        })
+    }, 250)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
+  }, [username, group, currentUsername])
 
   if (isLoadingGroup) {
     return (
@@ -214,6 +243,8 @@ function GroupDashboardPage() {
       const updated = await addMember(group.id, username)
       setGroup(updated)
       setUsername('')
+      setUsernameSuggestions([])
+      setIsSuggestionsOpen(false)
     } catch (err) {
       setAddError(err instanceof ApiError ? err.message : 'Could not add that member.')
     } finally {
@@ -552,14 +583,42 @@ function GroupDashboardPage() {
 
           {isCreator && (
             <form onSubmit={handleAddMember} className="mt-4 flex gap-2">
-              <input
-                type="text"
-                placeholder="Add member by username"
-                required
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                className="flex-1 rounded-lg border px-3 py-2 text-sm bg-(--bg) border-(--border) text-(--text-h)"
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Add member by username"
+                  required
+                  value={username}
+                  onChange={(event) => {
+                    setUsername(event.target.value)
+                    setIsSuggestionsOpen(true)
+                  }}
+                  onFocus={() => setIsSuggestionsOpen(true)}
+                  onBlur={() => window.setTimeout(() => setIsSuggestionsOpen(false), 150)}
+                  autoComplete="off"
+                  className="w-full rounded-lg border px-3 py-2 text-sm bg-(--bg) border-(--border) text-(--text-h)"
+                />
+                {isSuggestionsOpen && usernameSuggestions.length > 0 && (
+                  <ul className="surface-shadow absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-(--border) bg-(--surface)">
+                    {usernameSuggestions.map((suggestion) => (
+                      <li key={suggestion}>
+                        <button
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => {
+                            setUsername(suggestion)
+                            setUsernameSuggestions([])
+                            setIsSuggestionsOpen(false)
+                          }}
+                          className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-(--text-h) hover:bg-(--surface-2)"
+                        >
+                          {suggestion}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <button
                 type="submit"
                 disabled={isAdding}
