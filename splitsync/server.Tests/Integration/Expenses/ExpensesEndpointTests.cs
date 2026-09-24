@@ -230,6 +230,96 @@ public class ExpensesEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task CreatorCanEditTheirExpense()
+    {
+        var (groupId, creator, creatorClient, member, _) = await NewGroupOfTwoAsync();
+        var created = await (await creatorClient.PostAsJsonAsync($"/api/groups/{groupId}/expenses", new
+        {
+            description = "Weekly groceries",
+            amount = 40m,
+            splitMethod = "equal",
+            splits = new[] { new { username = creator.Username, amount = (decimal?)null, percentage = (decimal?)null },
+                             new { username = member.Username, amount = (decimal?)null, percentage = (decimal?)null } },
+        })).Content.ReadFromJsonAsync<ExpenseResponse>();
+
+        var response = await creatorClient.PatchAsJsonAsync($"/api/groups/{groupId}/expenses/{created!.Id}", new
+        {
+            description = "Fortnightly groceries",
+            amount = 50m,
+            splitMethod = "equal",
+            splits = new[] { new { username = creator.Username, amount = (decimal?)null, percentage = (decimal?)null },
+                             new { username = member.Username, amount = (decimal?)null, percentage = (decimal?)null } },
+        });
+
+        response.EnsureSuccessStatusCode();
+        var updated = await response.Content.ReadFromJsonAsync<ExpenseResponse>();
+        Assert.Equal("Fortnightly groceries", updated!.Description);
+        Assert.Equal(50m, updated.Shares.Sum(s => s.Amount));
+    }
+
+    [Fact]
+    public async Task OnlyThePayerCanEditTheExpense()
+    {
+        var (groupId, creator, creatorClient, member, memberClient) = await NewGroupOfTwoAsync();
+        var created = await (await creatorClient.PostAsJsonAsync($"/api/groups/{groupId}/expenses", new
+        {
+            description = "Weekly groceries",
+            amount = 40m,
+            splitMethod = "equal",
+            splits = new[] { new { username = creator.Username, amount = (decimal?)null, percentage = (decimal?)null },
+                             new { username = member.Username, amount = (decimal?)null, percentage = (decimal?)null } },
+        })).Content.ReadFromJsonAsync<ExpenseResponse>();
+
+        var response = await memberClient.PatchAsJsonAsync($"/api/groups/{groupId}/expenses/{created!.Id}", new
+        {
+            description = "Hijacked",
+            amount = 999m,
+            splitMethod = "equal",
+            splits = new[] { new { username = creator.Username, amount = (decimal?)null, percentage = (decimal?)null } },
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreatorCanDeleteTheirExpense()
+    {
+        var (groupId, creator, creatorClient, member, _) = await NewGroupOfTwoAsync();
+        var created = await (await creatorClient.PostAsJsonAsync($"/api/groups/{groupId}/expenses", new
+        {
+            description = "Coffee run",
+            amount = 10m,
+            splitMethod = "equal",
+            splits = new[] { new { username = creator.Username, amount = (decimal?)null, percentage = (decimal?)null },
+                             new { username = member.Username, amount = (decimal?)null, percentage = (decimal?)null } },
+        })).Content.ReadFromJsonAsync<ExpenseResponse>();
+
+        var response = await creatorClient.DeleteAsync($"/api/groups/{groupId}/expenses/{created!.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var remaining = await creatorClient.GetFromJsonAsync<List<ExpenseResponse>>($"/api/groups/{groupId}/expenses");
+        Assert.Empty(remaining!);
+    }
+
+    [Fact]
+    public async Task OnlyThePayerCanDeleteTheExpense()
+    {
+        var (groupId, creator, creatorClient, member, memberClient) = await NewGroupOfTwoAsync();
+        var created = await (await creatorClient.PostAsJsonAsync($"/api/groups/{groupId}/expenses", new
+        {
+            description = "Coffee run",
+            amount = 10m,
+            splitMethod = "equal",
+            splits = new[] { new { username = creator.Username, amount = (decimal?)null, percentage = (decimal?)null },
+                             new { username = member.Username, amount = (decimal?)null, percentage = (decimal?)null } },
+        })).Content.ReadFromJsonAsync<ExpenseResponse>();
+
+        var response = await memberClient.DeleteAsync($"/api/groups/{groupId}/expenses/{created!.Id}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task ExpensesListShowsTheNewestOneFirst()
     {
         var (groupId, creator, creatorClient, _, _) = await NewGroupOfTwoAsync();
