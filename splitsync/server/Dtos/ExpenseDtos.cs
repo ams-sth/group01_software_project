@@ -15,5 +15,6 @@ public record ExpenseResponse(
     string PaidByUsername,
     string SplitMethod,
     DateTime CreatedAt,
-    List<ExpenseShareResponse> Shares
+    List<ExpenseShareResponse> Shares,
+    bool HasReceipt
 );

@@ -16,5 +16,9 @@ public class Expense
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // Tracked here rather than derived from the receipt storage so listing a
+    // group's expenses doesn't need to ask the storage about each one.
+    public bool HasReceipt { get; set; }
+
     public ICollection<ExpenseShare> Shares { get; set; } = new List<ExpenseShare>();
 }
