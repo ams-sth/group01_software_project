@@ -12,13 +12,14 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function send(path: string, options: RequestInit = {}): Promise<Response> {
   const token = getToken()
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      // FormData bodies need the browser to set its own multipart Content-Type (with the boundary).
+      ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
@@ -29,6 +30,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const message = body?.message ?? body?.errors?.[0] ?? 'Something went wrong. Please try again.'
     throw new ApiError(message, response.status)
   }
+
+  return response
+}
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await send(path, options)
 
   if (response.status === 204) {
     return undefined as T
@@ -138,6 +145,7 @@ export interface ExpenseResponse {
   splitMethod: SplitMethod
   createdAt: string
   shares: ExpenseShareResponse[]
+  hasReceipt: boolean
 }
 
 export interface ExpenseSplitInput {
@@ -179,6 +187,26 @@ export function updateExpense(
 
 export function deleteExpense(groupId: string, expenseId: string) {
   return request<void>(`/groups/${groupId}/expenses/${expenseId}`, { method: 'DELETE' })
+}
+
+export function uploadReceipt(groupId: string, expenseId: string, photo: Blob) {
+  const form = new FormData()
+  form.append('file', photo, 'receipt')
+  return request<ExpenseResponse>(`/groups/${groupId}/expenses/${expenseId}/receipt`, {
+    method: 'PUT',
+    body: form,
+  })
+}
+
+export function deleteReceipt(groupId: string, expenseId: string) {
+  return request<ExpenseResponse>(`/groups/${groupId}/expenses/${expenseId}/receipt`, { method: 'DELETE' })
+}
+
+// Fetched as a blob (rather than pointing an <img> at the URL) because the
+// endpoint needs the Authorization header, which an <img> request can't send.
+export async function getReceipt(groupId: string, expenseId: string) {
+  const response = await send(`/groups/${groupId}/expenses/${expenseId}/receipt`)
+  return response.blob()
 }
 
 export interface MemberBalance {

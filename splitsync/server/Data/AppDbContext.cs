@@ -10,6 +10,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<GroupMember> GroupMembers => Set<GroupMember>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<ExpenseShare> ExpenseShares => Set<ExpenseShare>();
+    public DbSet<ExpenseReceipt> ExpenseReceipts => Set<ExpenseReceipt>();
     public DbSet<Settlement> Settlements => Set<Settlement>();
     public DbSet<Notification> Notifications => Set<Notification>();
 
@@ -70,6 +71,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             entity.HasOne(s => s.User)
                 .WithMany()
                 .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<ExpenseReceipt>(entity =>
+        {
+            entity.HasKey(r => r.ExpenseId);
+
+            entity.HasOne(r => r.Expense)
+                .WithOne()
+                .HasForeignKey<ExpenseReceipt>(r => r.ExpenseId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

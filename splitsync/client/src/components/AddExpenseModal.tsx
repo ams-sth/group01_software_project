@@ -1,12 +1,15 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import {
   addExpense,
   ApiError,
+  deleteReceipt,
   updateExpense,
+  uploadReceipt,
   type ExpenseResponse,
   type ExpenseSplitInput,
   type SplitMethod,
 } from '../lib/api'
+import { compressImage } from '../lib/image'
 
 function distributeEvenly(total: number, count: number): number[] {
   if (count <= 0) return []
@@ -88,6 +91,36 @@ function AddExpenseModal({
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
+  // Set once the expense itself has been saved, so if the receipt upload afterwards
+  // fails, submitting again retries against that expense instead of adding a duplicate.
+  const [savedExpense, setSavedExpense] = useState<ExpenseResponse | undefined>(expense)
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null)
+  const [isRemovingReceipt, setIsRemovingReceipt] = useState(false)
+  const hasExistingReceipt = Boolean(savedExpense?.hasReceipt) && !isRemovingReceipt
+
+  useEffect(() => {
+    if (!receiptFile) {
+      setReceiptPreviewUrl(null)
+      return
+    }
+    const url = URL.createObjectURL(receiptFile)
+    setReceiptPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [receiptFile])
+
+  function handleReceiptChosen(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setSaveError('Receipts must be a photo.')
+      return
+    }
+    setSaveError(null)
+    setReceiptFile(file)
+  }
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose()
@@ -141,14 +174,30 @@ function AddExpenseModal({
     }))
 
     setIsSaving(true)
+    let saved: ExpenseResponse | undefined
     try {
-      const saved = isEditing
-        ? await updateExpense(groupId, expense.id, description, parsedAmount, splitMethod, splits)
+      saved = savedExpense
+        ? await updateExpense(groupId, savedExpense.id, description, parsedAmount, splitMethod, splits)
         : await addExpense(groupId, description, parsedAmount, splitMethod, splits)
+      setSavedExpense(saved)
+
+      if (receiptFile) {
+        saved = await uploadReceipt(groupId, saved.id, await compressImage(receiptFile))
+      } else if (isRemovingReceipt && saved.hasReceipt) {
+        saved = await deleteReceipt(groupId, saved.id)
+      }
+
       onSaved(saved)
       onClose()
     } catch (err) {
-      setSaveError(err instanceof ApiError ? err.message : `Could not ${isEditing ? 'save' : 'add'} that expense.`)
+      const reason = err instanceof ApiError ? err.message : null
+      if (saved) {
+        // The expense went through but the receipt step didn't — keep the modal open to retry.
+        onSaved(saved)
+        setSaveError(`Expense saved, but the receipt couldn't be updated.${reason ? ` ${reason}` : ''}`)
+      } else {
+        setSaveError(reason ?? `Could not ${isEditing ? 'save' : 'add'} that expense.`)
+      }
     } finally {
       setIsSaving(false)
     }
@@ -276,6 +325,47 @@ function AddExpenseModal({
               Percentages total {splitValuesTotal}% of 100%
             </p>
           )}
+
+          <div className="flex flex-col gap-1">
+            <p className="text-[11px] text-(--text)">Receipt (optional)</p>
+            {receiptFile && receiptPreviewUrl ? (
+              <div className="flex items-center gap-2">
+                <img
+                  src={receiptPreviewUrl}
+                  alt="Selected receipt"
+                  className="h-12 w-12 rounded border object-cover border-(--border)"
+                />
+                <span className="flex-1 truncate text-xs text-(--text-h)">{receiptFile.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setReceiptFile(null)}
+                  className="cursor-pointer text-xs font-medium text-(--danger) hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : hasExistingReceipt ? (
+              <div className="flex items-center gap-3">
+                <span className="flex-1 text-xs text-(--text-h)">Receipt attached</span>
+                <label className="cursor-pointer text-xs font-medium text-(--accent) hover:underline">
+                  Replace
+                  <input type="file" accept="image/*" onChange={handleReceiptChosen} className="sr-only" />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsRemovingReceipt(true)}
+                  className="cursor-pointer text-xs font-medium text-(--danger) hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <label className="cursor-pointer rounded-lg border border-dashed px-2 py-2 text-center text-xs border-(--border) text-(--text) hover:text-(--text-h)">
+                Attach a photo of the receipt
+                <input type="file" accept="image/*" onChange={handleReceiptChosen} className="sr-only" />
+              </label>
+            )}
+          </div>
 
           {saveError && (
             <p role="alert" className="text-xs text-(--danger)">

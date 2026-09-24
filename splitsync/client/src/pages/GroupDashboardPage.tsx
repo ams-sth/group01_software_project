@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import AddExpenseModal from "../components/AddExpenseModal";
+import ReceiptModal from "../components/ReceiptModal";
 import {
 	ApiError,
 	addMember,
@@ -23,6 +24,10 @@ import {
 import { getCurrentUser } from "../lib/session";
 
 type Tab = "overview" | "transactions" | "members";
+
+// How often the dashboard quietly re-fetches while it's open, so changes made by
+// other members show up without a page reload.
+const BACKGROUND_REFRESH_MS = 20_000;
 
 type TransactionItem =
 	| { kind: "expense"; id: string; createdAt: string; data: ExpenseResponse }
@@ -53,6 +58,8 @@ function GroupDashboardPage() {
 	const [deleteExpenseError, setDeleteExpenseError] = useState<string | null>(
 		null,
 	);
+	const [viewingReceiptExpense, setViewingReceiptExpense] =
+		useState<ExpenseResponse | null>(null);
 
 	const [expenses, setExpenses] = useState<ExpenseResponse[]>([]);
 	const [settlements, setSettlements] = useState<SettlementResponse[]>([]);
@@ -95,57 +102,86 @@ function GroupDashboardPage() {
 		null,
 	);
 
-	useEffect(() => {
+	// `silent` refreshes run in the background: no loading indicators, and a failed
+	// one (e.g. briefly offline) keeps showing the last good data instead of an error.
+	function refreshGroup({ silent = false } = {}) {
 		if (!id) return;
 		listGroups()
 			.then((groups) => {
 				const found = groups.find((g) => g.id === id) ?? null;
 				setGroup(found);
-				setRenameValue(found?.name ?? "");
-				if (!found) setGroupError("Group not found.");
+				setGroupError(found ? null : "Group not found.");
+				if (!silent) setRenameValue(found?.name ?? "");
 			})
-			.catch((err) =>
+			.catch((err) => {
+				if (silent) return;
 				setGroupError(
 					err instanceof ApiError ? err.message : "Could not load this group.",
-				),
-			)
+				);
+			})
 			.finally(() => setIsLoadingGroup(false));
-	}, [id]);
+	}
 
-	function refreshTransactions() {
+	function refreshTransactions({ silent = false } = {}) {
 		if (!id) return;
-		setIsLoadingTransactions(true);
+		if (!silent) setIsLoadingTransactions(true);
 		Promise.all([listExpenses(id), listSettlements(id)])
 			.then(([expenseList, settlementList]) => {
 				setExpenses(expenseList);
 				setSettlements(settlementList);
+				setTransactionsError(null);
 			})
-			.catch((err) =>
+			.catch((err) => {
+				if (silent) return;
 				setTransactionsError(
 					err instanceof ApiError
 						? err.message
 						: "Could not load transactions.",
-				),
-			)
+				);
+			})
 			.finally(() => setIsLoadingTransactions(false));
 	}
 
-	function refreshBalances() {
+	function refreshBalances({ silent = false } = {}) {
 		if (!id) return;
-		setIsLoadingBalances(true);
+		if (!silent) setIsLoadingBalances(true);
 		getBalances(id)
-			.then(setBalances)
-			.catch((err) =>
+			.then((result) => {
+				setBalances(result);
+				setBalancesError(null);
+			})
+			.catch((err) => {
+				if (silent) return;
 				setBalancesError(
 					err instanceof ApiError ? err.message : "Could not load balances.",
-				),
-			)
+				);
+			})
 			.finally(() => setIsLoadingBalances(false));
 	}
 
 	useEffect(() => {
+		refreshGroup();
 		refreshTransactions();
 		refreshBalances();
+
+		function refreshInBackground() {
+			if (document.visibilityState !== "visible") return;
+			refreshGroup({ silent: true });
+			refreshTransactions({ silent: true });
+			refreshBalances({ silent: true });
+		}
+
+		const interval = window.setInterval(
+			refreshInBackground,
+			BACKGROUND_REFRESH_MS,
+		);
+		// Catch up straight away when coming back to the tab/app rather than
+		// waiting for the next tick.
+		document.addEventListener("visibilitychange", refreshInBackground);
+		return () => {
+			window.clearInterval(interval);
+			document.removeEventListener("visibilitychange", refreshInBackground);
+		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [id]);
 
@@ -600,6 +636,15 @@ function GroupDashboardPage() {
 										<p className="text-sm font-semibold text-(--text-h)">
 											${item.data.amount.toFixed(2)}
 										</p>
+										{item.data.hasReceipt && (
+											<button
+												type="button"
+												onClick={() => setViewingReceiptExpense(item.data)}
+												className="cursor-pointer text-xs font-medium text-(--accent) hover:underline"
+											>
+												Receipt
+											</button>
+										)}
 										{item.data.paidByUsername === currentUsername && (
 											<>
 												<button
@@ -820,6 +865,15 @@ function GroupDashboardPage() {
 						refreshTransactions();
 						refreshBalances();
 					}}
+				/>
+			)}
+
+			{viewingReceiptExpense && (
+				<ReceiptModal
+					groupId={group.id}
+					expenseId={viewingReceiptExpense.id}
+					description={viewingReceiptExpense.description}
+					onClose={() => setViewingReceiptExpense(null)}
 				/>
 			)}
 		</main>

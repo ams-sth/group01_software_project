@@ -11,8 +11,10 @@ namespace SplitSync.Api.Controllers;
 [ApiController]
 [Route("api/groups/{groupId}/expenses")]
 [Authorize]
-public class ExpensesController(AppDbContext db, NotificationService notifications) : ControllerBase
+public class ExpensesController(AppDbContext db, NotificationService notifications, IReceiptStorage receipts) : ControllerBase
 {
+    private const long MaxReceiptBytes = 5 * 1024 * 1024;
+
     [HttpGet]
     public async Task<ActionResult<List<ExpenseResponse>>> List(Guid groupId)
     {
@@ -161,10 +163,131 @@ public class ExpensesController(AppDbContext db, NotificationService notificatio
             return Forbid();
         }
 
+        // Deleted explicitly rather than left to the FK cascade so this still
+        // cleans up if receipts ever move out of the database.
+        if (expense.HasReceipt)
+        {
+            await receipts.DeleteAsync(expense.Id);
+        }
+
         db.Expenses.Remove(expense);
         await db.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    [HttpGet("{expenseId}/receipt")]
+    public async Task<IActionResult> GetReceipt(Guid groupId, Guid expenseId)
+    {
+        var userId = User.FindFirst("sub")!.Value;
+
+        var isMember = await db.GroupMembers.AnyAsync(gm => gm.GroupId == groupId && gm.UserId == userId);
+        if (!isMember)
+        {
+            return Forbid();
+        }
+
+        var expense = await db.Expenses.FirstOrDefaultAsync(e => e.Id == expenseId && e.GroupId == groupId);
+        var receipt = expense is { HasReceipt: true } ? await receipts.GetAsync(expense.Id) : null;
+        if (receipt is null)
+        {
+            return NotFound(new { message = "Receipt not found." });
+        }
+
+        Response.Headers.CacheControl = "private, no-store";
+        Response.Headers.XContentTypeOptions = "nosniff";
+        return File(receipt.Data, receipt.ContentType);
+    }
+
+    // Only the payer can attach or remove a receipt, same as editing the expense.
+    [HttpPut("{expenseId}/receipt")]
+    [RequestSizeLimit(MaxReceiptBytes + 64 * 1024)]
+    public async Task<ActionResult<ExpenseResponse>> UploadReceipt(Guid groupId, Guid expenseId, IFormFile? file)
+    {
+        var userId = User.FindFirst("sub")!.Value;
+
+        var expense = await db.Expenses.FirstOrDefaultAsync(e => e.Id == expenseId && e.GroupId == groupId);
+        if (expense is null)
+        {
+            return NotFound(new { message = "Expense not found." });
+        }
+
+        if (expense.PaidByUserId != userId)
+        {
+            return Forbid();
+        }
+
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = "Choose a photo to upload." });
+        }
+
+        if (file.Length > MaxReceiptBytes)
+        {
+            return BadRequest(new { message = "Receipt photos must be 5 MB or smaller." });
+        }
+
+        using var buffer = new MemoryStream();
+        await file.CopyToAsync(buffer);
+        var data = buffer.ToArray();
+
+        // Trust the file's actual bytes, not the name or Content-Type the client sent.
+        var contentType = DetectImageContentType(data);
+        if (contentType is null)
+        {
+            return BadRequest(new { message = "Receipts must be a JPEG, PNG, or WebP image." });
+        }
+
+        await receipts.SaveAsync(expense.Id, data, contentType);
+
+        expense.HasReceipt = true;
+        await db.SaveChangesAsync();
+
+        return Ok(await ToResponseAsync(expense.Id));
+    }
+
+    [HttpDelete("{expenseId}/receipt")]
+    public async Task<ActionResult<ExpenseResponse>> DeleteReceipt(Guid groupId, Guid expenseId)
+    {
+        var userId = User.FindFirst("sub")!.Value;
+
+        var expense = await db.Expenses.FirstOrDefaultAsync(e => e.Id == expenseId && e.GroupId == groupId);
+        if (expense is null)
+        {
+            return NotFound(new { message = "Expense not found." });
+        }
+
+        if (expense.PaidByUserId != userId)
+        {
+            return Forbid();
+        }
+
+        await receipts.DeleteAsync(expense.Id);
+
+        expense.HasReceipt = false;
+        await db.SaveChangesAsync();
+
+        return Ok(await ToResponseAsync(expense.Id));
+    }
+
+    private static string? DetectImageContentType(byte[] data)
+    {
+        if (data.Length >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF)
+        {
+            return "image/jpeg";
+        }
+
+        if (data.AsSpan().StartsWith((byte[])[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))
+        {
+            return "image/png";
+        }
+
+        if (data.Length >= 12 && data.AsSpan(0, 4).SequenceEqual("RIFF"u8) && data.AsSpan(8, 4).SequenceEqual("WEBP"u8))
+        {
+            return "image/webp";
+        }
+
+        return null;
     }
 
     // Validates the split request and computes the resulting per-member shares.
@@ -315,7 +438,8 @@ public class ExpensesController(AppDbContext db, NotificationService notificatio
             expense.PaidByUser.UserName!,
             expense.SplitMethod,
             expense.CreatedAt,
-            expense.Shares.Select(s => new ExpenseShareResponse(s.User.UserName!, s.Amount)).ToList()
+            expense.Shares.Select(s => new ExpenseShareResponse(s.User.UserName!, s.Amount)).ToList(),
+            expense.HasReceipt
         );
     }
 }
