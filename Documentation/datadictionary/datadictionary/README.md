@@ -20,6 +20,7 @@ This document describes every table in the SplitSync database: what it represent
 - [Expenses](./expenses.md)
 - [ExpenseParticipants](./expense_participants.md)
 - [ExpenseSplitValues](./expense_split_values.md)
+- [ExpenseReceipts](./expense_receipts.md)
 - [RecurringExpenses](./recurring_expenses.md)
 - [RecurringExpenseParticipants & RecurringExpenseSplitValues](./recurring_expense_splits.md)
 - [Settlements](./settlements.md)
