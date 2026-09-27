@@ -2,6 +2,7 @@ namespace JobTrackr.Api.Services;
 
 using JobTrackr.Api.Models;
 using JobTrackr.Api.Storage;
+using JobTrackr.Api.Services.Exceptions;
 
 public class JobApplicationService
 {
@@ -38,19 +39,19 @@ public class JobApplicationService
         };
     }
 
-    private void ValidateBusinessRules(JobApplication app)
+    internal void ValidateBusinessRules(JobApplication app)
     {
         if (app.ApplicationDate is not null && app.ApplicationDate > DateOnly.FromDateTime(DateTime.UtcNow))
-            throw new ArgumentException("Application date cannot be in the future.");
+            throw new ValidationFailedException("Application date cannot be in the future.");
 
         if (app.SalaryMin is not null && app.SalaryMin < 0)
-            throw new ArgumentException("Minimum salary cannot be negative.");
+            throw new ValidationFailedException("Minimum salary cannot be negative.");
 
         if (app.SalaryMin is not null && app.SalaryMax is not null && app.SalaryMax < app.SalaryMin)
-            throw new ArgumentException("Maximum salary cannot be lower than minimum salary.");
+            throw new ValidationFailedException("Maximum salary cannot be lower than minimum salary.");
 
         if (app.Status != ApplicationStatus.Draft && app.ApplicationDate is null)
-            throw new ArgumentException("An application date is required once status is past Draft.");
+            throw new ValidationFailedException("An application date is required once status is past Draft.");
     }
 
     public bool Delete(int id)
