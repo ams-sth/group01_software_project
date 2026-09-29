@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SecureVault.Console")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f2428fd5f8d22cde0db2f0a50c675121fcd2e7bf")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+23cd087811f9e21cfd0ab23625cc05d319472315")]
 [assembly: System.Reflection.AssemblyProductAttribute("SecureVault.Console")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SecureVault.Console")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
