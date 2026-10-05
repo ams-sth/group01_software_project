@@ -1,0 +1,25 @@
+user_id,display_name,signup_method,email_reminders_enabled,created_date,is_deleted
+U001,Ava,google,True,2026-01-02,False
+U002,Liam,google,True,2026-01-16,False
+U003,Noah,email_password,True,2026-01-07,False
+U004,Mia,google,True,2026-02-07,False
+U005,Zoe,google,True,2026-01-02,False
+U006,Ethan,email_password,True,2026-01-15,False
+U007,Ivy,google,True,2026-02-05,False
+U008,Leo,email_password,False,2026-01-15,False
+U009,Ruby,google,True,2026-01-01,False
+U010,Jack,email_password,False,2026-01-22,False
+U011,Chloe,google,True,2026-01-14,False
+U012,Owen,google,True,2026-01-06,False
+U013,Isla,google,True,2026-01-23,False
+U014,Finn,google,True,2026-01-03,False
+U015,Nora,google,False,2026-02-04,False
+U016,Kai,email_password,False,2026-01-06,False
+U017,Lily,google,True,2026-02-10,False
+U018,Max,google,True,2026-02-06,False
+U019,Ella,email_password,True,2026-01-03,False
+U020,Sam,google,True,2026-01-19,False
+U021,Tara,email_password,True,2026-01-07,False
+U022,Ben,google,True,2026-01-30,False
+U023,Hana,google,True,2026-01-11,False
+U024,Deleted User,google,False,2026-01-14,True

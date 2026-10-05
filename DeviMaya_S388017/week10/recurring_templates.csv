@@ -1,0 +1,7 @@
+template_id,group_id,description,amount,frequency,recurrence_day,start_date,end_date,split_method
+R001,G001,Rent,1800.00,monthly,1,2026-01-05,,equal
+R002,G001,Internet,79.00,monthly,15,2026-01-15,,equal
+R003,G003,Rent,2250.00,monthly,31,2026-01-31,,equal
+R004,G003,Weekly groceries,110.00,weekly,6,2026-01-17,,equal
+R005,G005,Coffee subscription,42.00,interval_days,14,2026-02-03,,equal
+R006,G004,Campsite fund,60.00,monthly,10,2026-03-10,2026-06-10,equal
