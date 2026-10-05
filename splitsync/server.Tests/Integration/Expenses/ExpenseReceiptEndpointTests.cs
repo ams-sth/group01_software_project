@@ -123,4 +123,17 @@ public class ExpenseReceiptEndpointTests : IDisposable
         var download = await memberClient.GetAsync($"/api/groups/{groupId}/expenses/{expenseId}/receipt");
         Assert.Equal(HttpStatusCode.NotFound, download.StatusCode);
     }
+
+    [Fact]
+    public async Task DeletingAnExpenseAlsoRemovesItsReceipt()
+    {
+        var (groupId, expenseId, payerClient, _) = await NewExpenseAsync();
+        await UploadAsync(payerClient, groupId, expenseId, TinyJpeg);
+
+        var deleted = await payerClient.DeleteAsync($"/api/groups/{groupId}/expenses/{expenseId}");
+        Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
+
+        var download = await payerClient.GetAsync($"/api/groups/{groupId}/expenses/{expenseId}/receipt");
+        Assert.Equal(HttpStatusCode.NotFound, download.StatusCode);
+    }
 }
