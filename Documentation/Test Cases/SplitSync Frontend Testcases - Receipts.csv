@@ -1,0 +1,7 @@
+﻿ID,Steps,Expected Result,Status
+RECEIPT-01,"As the payer, Edit an expense, attach a photo, Save changes.",Receipt button appears on the expense in Transactions.,Pass
+RECEIPT-02,"As the payer, Edit an expense and choose a non-image file.",Blocked with a message: Receipts must be a photo.,Pass
+RECEIPT-03,Open Receipt on an expense.,The photo is shown in a dialog; Escape or × closes it.,Pass
+RECEIPT-04,"As a member who did not pay, open the expense.",Receipt button is visible; Edit and Delete are not.,Pass
+RECEIPT-05,"As the payer, Edit an expense with a receipt, click Remove, Save changes.",Receipt button disappears from the expense.,Pass
+RECEIPT-06,"As the payer, delete an expense that has a receipt.",Expense and its receipt are both removed.,Pass
