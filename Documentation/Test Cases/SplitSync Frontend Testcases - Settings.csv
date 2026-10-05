@@ -1,4 +1,4 @@
 ﻿ID,Steps,Expected Result,Status
-SETTINGS-01,"Toggle ""Email reminders for unpaid balances"" on and off.",Preference is saved and reflected on reload.,
-SETTINGS-02,"Try ""Delete my account"" while you have an unpaid balance in any group.",Blocked.,
-SETTINGS-03,"Use ""Delete my account"" with no unpaid balances anywhere.",Personal info is removed; historical records are anonymized rather than deleted outright.,
+SETTINGS-01,"Toggle ""Email reminders for unpaid balances"" on and off.",Preference is saved and reflected on reload.,pass
+SETTINGS-02,"Try ""Delete my account"" while you have an unpaid balance in any group.",Blocked.,pass
+SETTINGS-03,"Use ""Delete my account"" with no unpaid balances anywhere.",Personal info is removed; historical records are anonymized rather than deleted outright.,pass

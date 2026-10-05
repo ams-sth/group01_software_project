@@ -1,5 +1,5 @@
 ﻿ID,Steps,Expected Result,Status
-EXPENSE-01,"Fill name, amount, date; split method Equal; select members; save.","Expense saved, amount split evenly among selected members, appears in Transactions and Activity.",
-EXPENSE-02,"Split method Unequal, enter amounts that don't add up to the total.",Blocked with a validation message (unequal amounts must sum to the total).,
-EXPENSE-03,"Split method Percentage, enter percentages that don't add up to 100%.",Blocked with a validation message (percentages must sum to 100%).,
-EXPENSE-04,Add an expense as a non-creator member.,Payer on the expense is automatically whoever added it — there's no payer picker.,
+EXPENSE-01,"Fill name, amount, date; split method Equal; select members; save.","Expense saved, amount split evenly among selected members, appears in Transactions and Activity.",pass
+EXPENSE-02,"Split method Unequal, enter amounts that don't add up to the total.",Blocked with a validation message (unequal amounts must sum to the total).,pass
+EXPENSE-03,"Split method Percentage, enter percentages that don't add up to 100%.",Blocked with a validation message (percentages must sum to 100%).,pass
+EXPENSE-04,Add an expense as a non-creator member.,Payer on the expense is automatically whoever added it — there's no payer picker.,pass

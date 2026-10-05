@@ -1,17 +1,17 @@
 ID,Section,Steps,Expected Result,Status
-LOGIN-01,Login,"Enter valid email or username + correct password, submit.",Authenticated and redirected to /groups.,
-LOGIN-02,Login,"Enter valid identifier + wrong password, submit.","Login rejected, error shown, stays on /login.",
-LOGIN-03,Login,"Enter an identifier that doesn't match any account, submit.",Login rejected with a generic error (doesn't reveal whether the account exists).,
-LOGIN-04,Login,"Leave identifier or password empty, submit.",Submit blocked client-side (required fields).,
-LOGIN-05,Login,"Enter password under 8 characters, submit.",Submit blocked client-side (minlength).,
-LOGIN-06,Login,Attempt login on a deleted account (IsDeleted = true).,"Rejected, account is not usable.",
-LOGIN-07,Login,"Click ""Continue with Google"" as an existing user.","Matched by IdPSubjectID, authenticated and redirected to /groups, no duplicate account created.",
-LOGIN-08,Login,"Click ""Continue with Google"" as a first-time user.","Falls through to signup (new account created), not treated as a failed login.",
+LOGIN-01,Login,"Enter valid email or username + correct password, submit.",Authenticated and redirected to /groups.,pass
+LOGIN-02,Login,"Enter valid identifier + wrong password, submit.","Login rejected, error shown, stays on /login.",pass
+LOGIN-03,Login,"Enter an identifier that doesn't match any account, submit.",Login rejected with a generic error (doesn't reveal whether the account exists).,pass
+LOGIN-04,Login,"Leave identifier or password empty, submit.",Submit blocked client-side (required fields).,pass
+LOGIN-05,Login,"Enter password under 8 characters, submit.",Submit blocked client-side (minlength).,pass
+LOGIN-06,Login,Attempt login on a deleted account (IsDeleted = true).,"Rejected, account is not usable.",pass
+LOGIN-07,Login,"Click ""Continue with Google"" as an existing user.","Matched by IdPSubjectID, authenticated and redirected to /groups, no duplicate account created.",pass
+LOGIN-08,Login,"Click ""Continue with Google"" as a first-time user.","Falls through to signup (new account created), not treated as a failed login.",pass
 ,,,,
-SIGNUP-01,Signup,"Enter valid email + password (8+ chars), submit.","Account created (Name/Email sourced from IdP), unique username auto-generated, redirected to /groups.",
-SIGNUP-02,Signup,"Enter an email that's already registered, submit.","Signup rejected with a clear error, no duplicate account created.",
-SIGNUP-03,Signup,"Enter an invalid email format, submit.",Submit blocked client-side.,
-SIGNUP-04,Signup,"Enter password under 8 characters, submit.",Submit blocked client-side (minlength).,
-SIGNUP-05,Signup,"After signup, log in using the auto-generated username.",Login succeeds - the generated username is unique and usable.,
-SIGNUP-06,Signup,"Click ""Continue with Google"" with a new email.","Account created using the IdP's profile info (Name/Email), redirected to /groups.",
-SIGNUP-07,Signup,"Click ""Continue with Google"" with an email that already has a password-based account.","Linked to the existing account by IdPSubjectID rather than creating a duplicate, or a clear conflict message if linking isn't supported.",
+SIGNUP-01,Signup,"Enter valid email + password (8+ chars), submit.","Account created (Name/Email sourced from IdP), unique username auto-generated, redirected to /groups.",pass
+SIGNUP-02,Signup,"Enter an email that's already registered, submit.","Signup rejected with a clear error, no duplicate account created.",pass
+SIGNUP-03,Signup,"Enter an invalid email format, submit.",Submit blocked client-side.,pass
+SIGNUP-04,Signup,"Enter password under 8 characters, submit.",Submit blocked client-side (minlength).,pass
+SIGNUP-05,Signup,"After signup, log in using the auto-generated username.",Login succeeds - the generated username is unique and usable.,pass
+SIGNUP-06,Signup,"Click ""Continue with Google"" with a new email.","Account created using the IdP's profile info (Name/Email), redirected to /groups.",pass
+SIGNUP-07,Signup,"Click ""Continue with Google"" with an email that already has a password-based account.","Linked to the existing account by IdPSubjectID rather than creating a duplicate, or a clear conflict message if linking isn't supported.",pass

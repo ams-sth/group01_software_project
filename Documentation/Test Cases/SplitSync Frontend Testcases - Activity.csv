@@ -1,2 +1,2 @@
 ﻿ID,Steps,Expected Result,Status
-ACTIVITY-01,Open the Activity page with expenses/settlements across multiple groups.,Expense events show even for ones you're not part of; settlement events show only if you're the payer or recipient; all sorted newest first across groups.,
+ACTIVITY-01,Open the Activity page with expenses/settlements across multiple groups.,Expense events show even for ones you're not part of; settlement events show only if you're the payer or recipient; all sorted newest first across groups.,pass
