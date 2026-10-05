@@ -68,6 +68,49 @@ describe('expenses', () => {
     })
   })
 
+  it('updates the balance when the payer changes an amount', () => {
+    registerViaApi().then((creator) => {
+      registerViaApi().then((member) => {
+        createGroupViaApi(creator, 'Flat 4B').then((group) => {
+          addMemberViaApi(creator, group.id, member.username).then(() => {
+            addExpenseViaApi(creator, group.id, 'Weekly groceries', 40, [creator.username, member.username]).then(() => {
+              visitAsUser(`http://localhost:5173/groups/${group.id}`, creator)
+              cy.contains('You are owed $20.00').should('be.visible')
+
+              cy.get('[role="tab"]').contains('transactions').click()
+              cy.contains('button', 'Edit').click()
+              cy.get('[role="dialog"]').within(() => {
+                cy.get('input[placeholder="Amount"]').clear().type('60')
+                cy.contains('button', 'Save changes').click()
+              })
+
+              cy.contains('You are owed $30.00').should('be.visible')
+            })
+          })
+        })
+      })
+    })
+  })
+
+  it('hides the edit and delete controls from a member who did not pay', () => {
+    registerViaApi().then((creator) => {
+      registerViaApi().then((member) => {
+        createGroupViaApi(creator, 'Flat 4B').then((group) => {
+          addMemberViaApi(creator, group.id, member.username).then(() => {
+            addExpenseViaApi(creator, group.id, 'Weekly groceries', 40, [creator.username, member.username]).then(() => {
+              visitAsUser(`http://localhost:5173/groups/${group.id}`, member)
+              cy.get('[role="tab"]').contains('transactions').click()
+
+              cy.contains('Weekly groceries').should('be.visible')
+              cy.contains('button', 'Edit').should('not.exist')
+              cy.contains('button', 'Delete').should('not.exist')
+            })
+          })
+        })
+      })
+    })
+  })
+
   it('lets the payer delete an expense', () => {
     registerViaApi().then((creator) => {
       createGroupViaApi(creator, 'Flat 4B').then((group) => {
