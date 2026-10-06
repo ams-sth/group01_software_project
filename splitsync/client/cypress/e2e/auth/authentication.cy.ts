@@ -12,13 +12,14 @@ describe('authentication page', () => {
     cy.contains("We'll generate a username for you automatically")
   })
 
-  
-  it('blocks submit when password is too short', () => {
-    cy.get('#identifier').type('user@example.com')
+  it('rejects a password that is too short when creating an account', () => {
+    cy.get('[role="tab"]').contains('Create account').click()
+    cy.get('#identifier').type(`shortpw${Date.now()}@example.com`)
     cy.get('#password').type('short')
-    cy.get('#password').then(($input) => {
-      expect(($input[0] as HTMLInputElement).checkValidity()).to.be.false
-    })
+    cy.get('button[type="submit"]').click()
+
+    cy.contains('[role="alert"]', /at least 8 characters/i)
+    cy.url().should('include', '/login')
   })
 
   it('creates an account and lands on the home page', () => {
