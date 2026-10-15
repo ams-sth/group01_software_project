@@ -6,11 +6,19 @@ using SplitSync.Api.Dtos;
 
 namespace SplitSync.Api.Controllers;
 
+// Manages in-app notifications for the signed-in user.
+// Notifications are created by other controllers (GroupsController, ExpensesController,
+// SettlementsController) via NotificationService whenever a relevant action occurs.
+// All endpoints require authentication and only return/modify the current user's notifications.
 [ApiController]
 [Route("api/notifications")]
 [Authorize]
 public class NotificationsController(AppDbContext db) : ControllerBase
 {
+    // GET /api/notifications
+    // Returns the 50 most recent notifications for the signed-in user, newest first.
+    // Capped at 50 to keep the response size predictable — older notifications are still
+    // in the database but not surfaced in the UI.
     [HttpGet]
     public async Task<ActionResult<List<NotificationResponse>>> List()
     {
@@ -25,6 +33,10 @@ public class NotificationsController(AppDbContext db) : ControllerBase
         return Ok(notifications.Select(n => new NotificationResponse(n.Id, n.Message, n.GroupId, n.IsRead, n.CreatedAt)).ToList());
     }
 
+    // GET /api/notifications/unread-count
+    // Returns the number of unread notifications for the bell badge in the header.
+    // Separate from the full list endpoint so the client can poll this cheaply
+    // without fetching all notification messages.
     [HttpGet("unread-count")]
     public async Task<ActionResult<UnreadCountResponse>> UnreadCount()
     {
@@ -35,6 +47,9 @@ public class NotificationsController(AppDbContext db) : ControllerBase
         return Ok(new UnreadCountResponse(count));
     }
 
+    // POST /api/notifications/{id}/read
+    // Marks a single notification as read. Checks that the notification belongs to
+    // the signed-in user before updating it — users cannot mark other people's notifications.
     [HttpPost("{id}/read")]
     public async Task<IActionResult> MarkRead(Guid id)
     {
@@ -46,6 +61,7 @@ public class NotificationsController(AppDbContext db) : ControllerBase
             return NotFound();
         }
 
+        // Ownership check — a valid notification ID belonging to someone else should be Forbidden, not NotFound.
         if (notification.RecipientUserId != userId)
         {
             return Forbid();
@@ -57,6 +73,9 @@ public class NotificationsController(AppDbContext db) : ControllerBase
         return NoContent();
     }
 
+    // POST /api/notifications/read-all
+    // Marks all of the signed-in user's unread notifications as read in one request,
+    // used by the "Mark all read" button in the notification dropdown.
     [HttpPost("read-all")]
     public async Task<IActionResult> MarkAllRead()
     {

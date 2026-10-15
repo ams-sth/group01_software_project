@@ -9,6 +9,10 @@ using SplitSync.Api.Services;
 
 namespace SplitSync.Api.Controllers;
 
+// Handles balances and settlements within a group.
+// Balances are computed on the fly from all expenses and settlements — there is no
+// stored balance figure, so they are always accurate even if expenses are edited or deleted.
+// Settlements are permanent once recorded: there is no edit or delete endpoint.
 [ApiController]
 [Route("api/groups/{groupId}")]
 [Authorize]

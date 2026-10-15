@@ -9,11 +9,16 @@ using SplitSync.Api.Services;
 
 namespace SplitSync.Api.Controllers;
 
+// Manages spending groups and their membership. All endpoints require authentication.
+// Only the group creator can rename, delete, add members or remove members —
+// regular members can only list, join by ID, or leave.
 [ApiController]
 [Route("api/groups")]
 [Authorize]
 public class GroupsController(AppDbContext db, UserManager<AppUser> userManager, NotificationService notifications) : ControllerBase
 {
+    // POST /api/groups
+    // Creates a new group and automatically adds the creator as the first member.
     [HttpPost]
     public async Task<ActionResult<GroupResponse>> Create(CreateGroupRequest request)
     {
@@ -25,6 +30,7 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
             Name = request.Name,
             CreatorId = userId,
         };
+        // Creator is added as a member immediately so they can start adding expenses.
         group.Members.Add(new GroupMember { GroupId = group.Id, UserId = userId });
 
         db.Groups.Add(group);
@@ -33,6 +39,8 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
         return Ok(await ToResponse(group.Id));
     }
 
+    // GET /api/groups
+    // Returns all groups the signed-in user belongs to (looked up via GroupMembers join table).
     [HttpGet]
     public async Task<ActionResult<List<GroupResponse>>> List()
     {
@@ -51,6 +59,8 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
         return Ok(groups);
     }
 
+    // PATCH /api/groups/{id}
+    // Renames a group. Creator only — regular members cannot rename.
     [HttpPatch("{id}")]
     public async Task<ActionResult<GroupResponse>> Rename(Guid id, RenameGroupRequest request)
     {
@@ -73,6 +83,10 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
         return Ok(await ToResponse(id));
     }
 
+    // DELETE /api/groups/{id}
+    // Deletes the group and notifies all other members. Creator only.
+    // Cascade deletes in the database remove all related expenses, shares, settlements
+    // and notifications when the group row is removed.
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -89,6 +103,8 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
             return Forbid();
         }
 
+        // Collect other member IDs and the group name before deleting,
+        // since we need them for notifications after the group is gone.
         var otherMemberIds = await db.GroupMembers
             .Where(gm => gm.GroupId == id && gm.UserId != userId)
             .Select(gm => gm.UserId)
@@ -98,12 +114,17 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
         db.Groups.Remove(group);
         await db.SaveChangesAsync();
 
+        // Notify everyone else that the group was deleted. GroupId is null in the
+        // notification because the group no longer exists — the message text carries enough context.
         var actorUsername = User.FindFirst("unique_name")!.Value;
         await notifications.NotifyManyAsync(otherMemberIds, $"{actorUsername} deleted \"{groupName}\"");
 
         return NoContent();
     }
 
+    // DELETE /api/groups/{id}/members/{username}
+    // Removes a member from the group. Creator only — and the creator cannot remove themselves.
+    // The removed member receives a notification.
     [HttpDelete("{id}/members/{username}")]
     public async Task<ActionResult<GroupResponse>> RemoveMember(Guid id, string username)
     {
@@ -126,6 +147,8 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
             return NotFound(new { message = "No user with that username." });
         }
 
+        // The creator cannot be removed — the group must be deleted instead.
+        // This prevents the group from being left in an ownerless state.
         if (targetUser.Id == group.CreatorId)
         {
             return BadRequest(new { message = "The group creator can't be removed. Delete the group instead." });
@@ -146,6 +169,9 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
         return Ok(await ToResponse(id));
     }
 
+    // POST /api/groups/{id}/leave
+    // Lets a member leave a group voluntarily. The creator cannot leave — they must
+    // delete the group instead so it is never left without an owner.
     [HttpPost("{id}/leave")]
     public async Task<IActionResult> Leave(Guid id)
     {
@@ -174,6 +200,11 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
         return NoContent();
     }
 
+    // GET /api/groups/{id}/member-candidates?q=
+    // Searches usernames to suggest when adding a member. Creator only.
+    // Requires at least 2 characters to avoid returning the entire user table.
+    // Uses ILike (Postgres case-insensitive LIKE) — this won't run on the in-memory
+    // test database, which is why this endpoint is not covered by the integration tests.
     [HttpGet("{id}/member-candidates")]
     public async Task<ActionResult<List<string>>> SearchMemberCandidates(Guid id, [FromQuery] string q)
     {
@@ -195,6 +226,7 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
             return Ok(new List<string>());
         }
 
+        // Fetch current members first so we can exclude them from the results.
         var existingUsernames = await db.GroupMembers
             .Where(gm => gm.GroupId == id)
             .Select(gm => gm.User.UserName!)
@@ -208,9 +240,13 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
             .Take(10)
             .ToListAsync();
 
+        // Return at most 5 results, excluding people who are already in the group.
         return Ok(matches.Where(username => !existingUsernames.Contains(username)).Take(5).ToList());
     }
 
+    // POST /api/groups/{id}/members
+    // Adds a member to the group by username. Creator only.
+    // The added user receives a notification.
     [HttpPost("{id}/members")]
     public async Task<ActionResult<GroupResponse>> AddMember(Guid id, AddMemberRequest request)
     {
@@ -248,6 +284,9 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
         return Ok(await ToResponse(id));
     }
 
+    // POST /api/groups/{id}/join
+    // Lets any authenticated user join a group using its ID (shared out-of-band, e.g. via chat).
+    // Anyone can join — no creator approval required.
     [HttpPost("{id}/join")]
     public async Task<ActionResult<GroupResponse>> Join(Guid id)
     {
@@ -271,6 +310,9 @@ public class GroupsController(AppDbContext db, UserManager<AppUser> userManager,
         return Ok(await ToResponse(id));
     }
 
+    // Loads the full group with creator and member usernames from the database.
+    // Used by every endpoint that returns a GroupResponse so the mapping logic
+    // lives in one place.
     private async Task<GroupResponse> ToResponse(Guid groupId)
     {
         var group = await db.Groups

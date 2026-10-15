@@ -8,11 +8,17 @@ using SplitSync.Api.Services;
 
 namespace SplitSync.Api.Controllers;
 
+// Manages expenses and receipt photos within a group.
+// All endpoints require authentication and group membership.
+// Editing or deleting an expense, and adding/removing receipts, is restricted to the
+// member who originally paid — not even the group creator can modify someone else's expense.
 [ApiController]
 [Route("api/groups/{groupId}/expenses")]
 [Authorize]
 public class ExpensesController(AppDbContext db, NotificationService notifications, IReceiptStorage receipts) : ControllerBase
 {
+    // Maximum receipt upload size: 5 MB. The client shrinks images before uploading
+    // (max 1600px, JPEG) so real-world uploads are well under this limit.
     private const long MaxReceiptBytes = 5 * 1024 * 1024;
 
     [HttpGet]
