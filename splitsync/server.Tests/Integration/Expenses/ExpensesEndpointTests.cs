@@ -282,6 +282,31 @@ public class ExpensesEndpointTests : IDisposable
     }
 
     [Fact]
+    public async Task EditingToAnUnequalSplitThatDoesntAddUpIsRejected()
+    {
+        var (groupId, creator, creatorClient, member, _) = await NewGroupOfTwoAsync();
+        var created = await (await creatorClient.PostAsJsonAsync($"/api/groups/{groupId}/expenses", new
+        {
+            description = "Weekly groceries",
+            amount = 40m,
+            splitMethod = "equal",
+            splits = new[] { new { username = creator.Username, amount = (decimal?)null, percentage = (decimal?)null },
+                             new { username = member.Username, amount = (decimal?)null, percentage = (decimal?)null } },
+        })).Content.ReadFromJsonAsync<ExpenseResponse>();
+
+        var response = await creatorClient.PatchAsJsonAsync($"/api/groups/{groupId}/expenses/{created!.Id}", new
+        {
+            description = "Weekly groceries",
+            amount = 40m,
+            splitMethod = "unequal",
+            splits = new[] { new { username = creator.Username, amount = (decimal?)10m, percentage = (decimal?)null },
+                             new { username = member.Username, amount = (decimal?)10m, percentage = (decimal?)null } },
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task CreatorCanDeleteTheirExpense()
     {
         var (groupId, creator, creatorClient, member, _) = await NewGroupOfTwoAsync();

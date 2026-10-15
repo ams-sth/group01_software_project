@@ -1,3 +1,3 @@
 ﻿ID,Steps,Expected Result,Status
-OVERVIEW-01,Open a group you belong to.,"Shows your balance vs. other members only (pairwise), not a group-wide total; ""Record settlement"" and ""+ Add expense"" buttons are visible.",
-OVERVIEW-02,Click through Overview / Transactions / Recurring / Members tabs.,Each tab loads its own content correctly.,
+OVERVIEW-01,Open a group you belong to.,"Shows your balance vs. other members only (pairwise), not a group-wide total; ""Record settlement"" and ""+ Add expense"" buttons are visible.",pass
+OVERVIEW-02,Click through Overview / Transactions / Recurring / Members tabs.,Each tab loads its own content correctly.,pass

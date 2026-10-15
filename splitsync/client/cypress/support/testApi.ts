@@ -1,6 +1,7 @@
 const API_URL = 'http://localhost:5085/api'
 
 const NAMES = ['priya', 'devi', 'shanti', 'Amsh', 'aisha', 'noor', 'callum', 'leo']
+const RUN_ID = Date.now().toString(36)
 let nameIndex = 0
 
 export interface AuthResult {
@@ -18,7 +19,7 @@ export interface GroupResult {
 
 export function registerViaApi(password = 'flatmates2026'): Cypress.Chainable<AuthResult> {
   nameIndex += 1
-  const email = `${NAMES[nameIndex % NAMES.length]}${nameIndex}@example.com`
+  const email = `${NAMES[nameIndex % NAMES.length]}${RUN_ID}${nameIndex}@example.com`
   return cy.request('POST', `${API_URL}/auth/register`, { email, password }).then((response) => response.body as AuthResult)
 }
 

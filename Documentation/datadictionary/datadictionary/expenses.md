@@ -12,7 +12,7 @@ A single shared expense within a group.
 | ExpenseDate | date | No | | User-editable transaction date. |
 | Amount | decimal(10,2) | No | | Total expense amount. |
 | SplitType | enum(Equal, Unequal, Percentage) | No | | Discriminator controlling how `ExpenseSplitValues` is interpreted. |
-| AttachmentPath | varchar | Yes | | Path to a single optional receipt/photo. |
+| HasReceipt | boolean | No | | True if the expense has a receipt photo in `ExpenseReceipts`. Kept here so listing expenses doesn't have to check the receipts table for each one. |
 
 ## Business rules
 
@@ -21,4 +21,4 @@ A single shared expense within a group.
 ## Rejected / not modeled
 
 - `RecurringExpenseID` FK: no current FR that requires a link between an `Expense` occurence & `RecurringExpense`, instead provenance is captured in `Notes` at generation time.
-- Separate `ExpenseAttachments` table (1:1 relationship, not 1:M)
+- `AttachmentPath` column: the plan was to save receipt photos as files and store the path here, but Render's free tier deletes files on every restart/redeploy. Photos are stored in the database instead, see [ExpenseReceipts](./expense_receipts.md).

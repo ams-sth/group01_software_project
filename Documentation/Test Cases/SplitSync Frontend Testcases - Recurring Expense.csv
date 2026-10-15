@@ -1,4 +1,4 @@
 ﻿ID,Steps,Expected Result,Status
-RECURRING-01,Create a Monthly recurring expense with day of month = 31.,"In shorter months, the generated date is clamped to that month's last day.",
-RECURRING-02,"Save a recurring template, then edit its amount later.",Already-generated past expenses are unaffected; only future occurrences use the new amount.,
-RECURRING-03,"Create templates using Weekly, Monthly, and Custom interval options, with and without an end date.",All three repeat types save correctly; end date is optional.,
+RECURRING-01,Create a Monthly recurring expense with day of month = 31.,"In shorter months, the generated date is clamped to that month's last day.",pass
+RECURRING-02,"Save a recurring template, then edit its amount later.",Already-generated past expenses are unaffected; only future occurrences use the new amount.,pass
+RECURRING-03,"Create templates using Weekly, Monthly, and Custom interval options, with and without an end date.",All three repeat types save correctly; end date is optional.,pass

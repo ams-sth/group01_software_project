@@ -15,7 +15,13 @@
 | Candidate | Why rejected |
 |---|---|
 | RecurringExpenseID FK on Expenses | No FR reads/displays it; provenance handled via Notes instead |
-| ExpenseAttachments (separate table) | SRS supports one attachment per expense, not many — 1:1, not 1:M |
+| Expenses.AttachmentPath (receipt saved as a file) | Render free tier has no persistent disk, so files would be lost on redeploy. Replaced by the `ExpenseReceipts` table (see below) |
 | Settlements.CreatorID (separate from PayerID) | Creator is always the payer by corrected scope decision |
 | Activities.TransactionID | No FR requires drill-through or grouping by source record |
 | Users/GroupMembers audit timestamps | Not requested by any FR |
+
+## Design changes made during development
+
+| Change | Why |
+|---|---|
+| Receipt photos moved from a file path on `Expenses` to their own `ExpenseReceipts` table (1:1 with `Expenses`) | Render's free tier has no persistent disk. Keeping the image bytes in a separate table also means listing expenses never loads the images. `Expenses.HasReceipt` was added so the list can show which expenses have a receipt |

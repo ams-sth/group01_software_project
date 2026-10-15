@@ -1,5 +1,5 @@
 ﻿ID,Steps,Expected Result,Status
-GROUPS-01,Navigate to /groups.,"A card is shown per group, with name, member count, and a balance badge (green = you're owed, amber = you owe).",
-GROUPS-02,"Click ""+ Create group"".",Create group modal opens.,
-GROUPS-03,"Enter a group name, submit.",Group is created; you're recorded as Creator and first member.,
-GROUPS-04,"Leave group name empty, submit.",Submit blocked (required field).,
+GROUPS-01,Navigate to /groups.,"A card is shown per group, with name, member count, and a balance badge (green = you're owed, amber = you owe).",pass 
+GROUPS-02,"Click ""+ Create group"".",Create group modal opens.,pass 
+GROUPS-03,"Enter a group name, submit.",Group is created; you're recorded as Creator and first member.,pass 
+GROUPS-04,"Leave group name empty, submit.",Submit blocked (required field).,pass 

@@ -1,6 +1,6 @@
 ﻿ID,Steps,Expected Result,Status
-MEMBERS-01,"As Creator, add a new member.",Member is added to the group.,
-MEMBERS-02,"As Creator, remove a member whose balance with the group is $0.",Member is removed successfully.,
-MEMBERS-03,"As Creator, try to remove a member who has an unpaid balance.",Blocked — can't remove a member with an outstanding balance.,
-MEMBERS-04,"As a non-creator, open the Members tab.",Add/remove/rename controls are hidden; a read-only note is shown instead.,
-MEMBERS-05,"As Creator, delete the group (even with unpaid balances present).","Group and all its data are removed for every member, regardless of unpaid balances.",
+MEMBERS-01,"As Creator, add a new member.",Member is added to the group.,pass
+MEMBERS-02,"As Creator, remove a member whose balance with the group is $0.",Member is removed successfully.,pass
+MEMBERS-03,"As Creator, try to remove a member who has an unpaid balance.",Blocked — can't remove a member with an outstanding balance.,pass
+MEMBERS-04,"As a non-creator, open the Members tab.",Add/remove/rename controls are hidden; a read-only note is shown instead.,pass
+MEMBERS-05,"As Creator, delete the group (even with unpaid balances present).","Group and all its data are removed for every member, regardless of unpaid balances.",pass

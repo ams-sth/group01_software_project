@@ -1,0 +1,6 @@
+﻿ID,Steps,Expected Result,Status
+DASHBOARD-01,Open a brand-new group.,Shows 'No balances yet.' and '+ Add expense'; Transactions shows 'No transactions yet.',Pass
+DASHBOARD-02,"Click through the Overview, Transactions and Members tabs.",The selected tab is highlighted and its content is shown.,Pass
+DASHBOARD-03,"As a member who owes money, open the group Overview.",Summary reads 'You owe $X' and the per-person list shows the amount owed to each person.,Pass
+DASHBOARD-04,Open a group URL that does not exist.,'Group not found.' is shown with a Back to groups link.,Pass
+DASHBOARD-05,"As a non-creator member, open the Members tab.","Leave group is shown; Rename, Delete and the add-member field are hidden.",Pass

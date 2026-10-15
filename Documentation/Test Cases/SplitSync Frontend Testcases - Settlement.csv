@@ -1,3 +1,3 @@
 ﻿ID,Steps,Expected Result,Status
-SETTLEMENT-01,"Select a member, enter an amount, save.",Settlement recorded immediately — no confirmation step from the other member (one-sided by design).,
-SETTLEMENT-02,"As a member who did NOT record a given settlement, try to edit/delete it.",Blocked — only the member who recorded a settlement can edit or delete it.,
+SETTLEMENT-01,"Select a member, enter an amount, save.",Settlement recorded immediately — no confirmation step from the other member (one-sided by design).,pass
+SETTLEMENT-02,"As a member who did NOT record a given settlement, try to edit/delete it.",Blocked — only the member who recorded a settlement can edit or delete it.,pass
